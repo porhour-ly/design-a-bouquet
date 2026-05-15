@@ -1,0 +1,139 @@
+# Digital Bouquet Builder — PRD
+
+## Product Overview
+
+A cozy mobile-first web app where users can arrange digital flower bouquets and share them with others through a link.
+
+The core experience is not gifting flowers itself, but the relaxing and satisfying experience of arranging flowers digitally.
+
+The interaction model should feel similar to Instagram Story editing:
+- drag
+- resize
+- rotate
+- layer objects intuitively
+
+The app should feel playful, tactile, emotional, and visually delightful.
+
+
+---
+
+# Core Experience
+
+Users should be able to:
+1. Add flowers onto a bouquet canvas
+2. Move flowers around naturally
+3. Resize and rotate flowers
+4. Layer flowers visually
+5. Add a short note
+6. Share the bouquet via link
+
+
+---
+
+# Product Goals
+
+The experience should:
+- feel relaxing and cozy
+- encourage creative expression
+- feel satisfying even without sending
+- work smoothly on mobile web
+- feel intuitive with touch gestures
+
+The bouquet arranging experience is the main product value.
+
+
+---
+
+# MVP Scope
+
+## Included
+- Mobile-first canvas
+- Add flower stickers
+- Drag flowers
+- Resize flowers
+- Rotate flowers
+- Layer flowers
+- Bouquet wrapper/background
+- Short text note
+- Generate shareable link
+
+## Excluded
+- Accounts/login
+- AI generation
+- Payments
+- Multiplayer
+- Social feed
+- Notifications
+- Desktop optimization
+- Advanced flower physics
+
+
+---
+
+# Interaction Principles
+
+- Interactions should feel direct and responsive
+- Gestures should feel forgiving
+- Motion should feel soft and springy
+- Editing should feel playful, not technical
+- Users should not need tutorials
+
+
+---
+
+# Visual Direction
+
+The visual style should feel:
+- soft
+- cozy
+- tactile
+- emotionally warm
+
+Inspirations:
+- Instagram Story editor
+- Animal Crossing
+- cozy mobile games
+- sticker books
+- scrapbooking
+
+
+---
+
+# Technical Direction
+
+## Frontend
+- Next.js
+- TypeScript
+- TailwindCSS
+- Framer Motion
+
+## Gesture Handling
+- @use-gesture/react
+
+## Storage
+- Local state initially
+- Supabase later if needed
+
+
+---
+
+# Success Criteria
+
+The MVP is successful if:
+- arranging flowers feels enjoyable
+- touch gestures feel smooth on mobile
+- users naturally experiment with layouts
+- the experience feels emotionally delightful
+
+
+---
+
+# First Milestone
+
+Build a mobile canvas where:
+- users can add flowers
+- drag flowers smoothly
+- resize flowers
+- rotate flowers
+
+No backend required.
