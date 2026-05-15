@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import { useGesture } from "@use-gesture/react";
 
@@ -13,7 +13,10 @@ interface DraggableFlowerProps {
   zIndex: number;
   onDragEnd: (id: string, x: number, y: number) => void;
   onDragStart: (id: string) => void;
-  onScaleEnd: (id: string, scale: number) => void;
+  registerScaleHandler: (
+    id: string,
+    handler: { set: (s: number) => void; get: () => number }
+  ) => () => void;
 }
 
 export default function DraggableFlower({
@@ -25,12 +28,19 @@ export default function DraggableFlower({
   zIndex,
   onDragEnd,
   onDragStart,
-  onScaleEnd,
+  registerScaleHandler,
 }: DraggableFlowerProps) {
   const motionX = useMotionValue(x);
   const motionY = useMotionValue(y);
   const motionScale = useMotionValue(baseScale);
   const ref = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    return registerScaleHandler(id, {
+      set: (s: number) => motionScale.set(s),
+      get: () => motionScale.get(),
+    });
+  }, [id, registerScaleHandler, motionScale]);
 
   useGesture(
     {
@@ -40,20 +50,11 @@ export default function DraggableFlower({
         motionY.set(oy);
       },
       onDragEnd: () => onDragEnd(id, motionX.get(), motionY.get()),
-      onPinch: ({ offset: [s] }) => {
-        const clamped = Math.min(3, Math.max(0.5, s));
-        motionScale.set(clamped);
-      },
-      onPinchEnd: () => onScaleEnd(id, motionScale.get()),
     },
     {
       target: ref,
       drag: {
         from: () => [motionX.get(), motionY.get()],
-      },
-      pinch: {
-        scaleBounds: { min: 0.5, max: 3 },
-        from: () => [motionScale.get(), 0],
       },
     }
   );
