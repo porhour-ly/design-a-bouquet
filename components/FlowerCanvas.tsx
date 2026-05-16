@@ -15,23 +15,42 @@ interface Flower {
   x: number;
   y: number;
   scale: number;
+  rotation: number;
   zIndex: number;
 }
 
 export default function FlowerCanvas() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const nextZIndex = useRef(1);
   const canvasRef = useRef<HTMLDivElement>(null!);
   const activeFlowerId = useRef<string | null>(null);
-  const scaleHandlers = useRef(
-    new Map<string, { set: (s: number) => void; get: () => number }>()
+  const pinchBaseRotation = useRef(0);
+  const transformHandlers = useRef(
+    new Map<
+      string,
+      {
+        getScale: () => number;
+        setScale: (s: number) => void;
+        getRotation: () => number;
+        setRotation: (r: number) => void;
+      }
+    >()
   );
 
-  const registerScaleHandler = useCallback(
-    (id: string, handler: { set: (s: number) => void; get: () => number }) => {
-      scaleHandlers.current.set(id, handler);
+  const registerTransformHandler = useCallback(
+    (
+      id: string,
+      handler: {
+        getScale: () => number;
+        setScale: (s: number) => void;
+        getRotation: () => number;
+        setRotation: (r: number) => void;
+      }
+    ) => {
+      transformHandlers.current.set(id, handler);
       return () => {
-        scaleHandlers.current.delete(id);
+        transformHandlers.current.delete(id);
       };
     },
     []
@@ -52,10 +71,12 @@ export default function FlowerCanvas() {
         x: centerX + offsetX,
         y: centerY + offsetY,
         scale: 1,
+        rotation: 0,
         zIndex: nextZIndex.current++,
       },
     ]);
     activeFlowerId.current = id;
+    setSelectedId(id);
   }, []);
 
   const handleDragEnd = useCallback((id: string, x: number, y: number) => {
@@ -64,37 +85,64 @@ export default function FlowerCanvas() {
     );
   }, []);
 
-  const handleScaleEnd = useCallback((id: string, scale: number) => {
+  const handlePinchEnd = useCallback(
+    (id: string, scale: number, rotation: number) => {
+      setFlowers((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, scale, rotation } : f))
+      );
+    },
+    []
+  );
+
+  const handleRotateEnd = useCallback((id: string, rotation: number) => {
     setFlowers((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, scale } : f))
+      prev.map((f) => (f.id === id ? { ...f, rotation } : f))
     );
   }, []);
 
   const handleDragStart = useCallback((id: string) => {
     activeFlowerId.current = id;
+    setSelectedId(id);
     const z = nextZIndex.current++;
     setFlowers((prev) =>
       prev.map((f) => (f.id === id ? { ...f, zIndex: z } : f))
     );
   }, []);
 
+  const handleCanvasPointerDown = useCallback((e: React.PointerEvent) => {
+    // Only deselect if clicking directly on the canvas background
+    if (e.target === e.currentTarget) {
+      setSelectedId(null);
+    }
+  }, []);
+
   useGesture(
     {
-      onPinch: ({ offset: [s] }) => {
+      onPinchStart: () => {
         const id = activeFlowerId.current;
         if (id) {
-          const handler = scaleHandlers.current.get(id);
+          const handler = transformHandlers.current.get(id);
           if (handler) {
-            handler.set(Math.min(3, Math.max(0.5, s)));
+            pinchBaseRotation.current = handler.getRotation();
+          }
+        }
+      },
+      onPinch: ({ offset: [s], movement: [, angleDelta] }) => {
+        const id = activeFlowerId.current;
+        if (id) {
+          const handler = transformHandlers.current.get(id);
+          if (handler) {
+            handler.setScale(Math.min(3, Math.max(0.5, s)));
+            handler.setRotation(pinchBaseRotation.current + angleDelta);
           }
         }
       },
       onPinchEnd: () => {
         const id = activeFlowerId.current;
         if (id) {
-          const handler = scaleHandlers.current.get(id);
+          const handler = transformHandlers.current.get(id);
           if (handler) {
-            handleScaleEnd(id, handler.get());
+            handlePinchEnd(id, handler.getScale(), handler.getRotation());
           }
         }
       },
@@ -106,8 +154,8 @@ export default function FlowerCanvas() {
         from: () => {
           const id = activeFlowerId.current;
           if (id) {
-            const handler = scaleHandlers.current.get(id);
-            if (handler) return [handler.get(), 0];
+            const handler = transformHandlers.current.get(id);
+            if (handler) return [handler.getScale(), 0];
           }
           return [1, 0];
         },
@@ -121,14 +169,17 @@ export default function FlowerCanvas() {
         ref={canvasRef}
         className="fixed inset-0 overflow-hidden"
         style={{ touchAction: "none" }}
+        onPointerDown={handleCanvasPointerDown}
       >
         {flowers.map((flower) => (
           <DraggableFlower
             key={flower.id}
             {...flower}
+            isSelected={flower.id === selectedId}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
-            registerScaleHandler={registerScaleHandler}
+            onRotateEnd={handleRotateEnd}
+            registerTransformHandler={registerTransformHandler}
           />
         ))}
       </div>
