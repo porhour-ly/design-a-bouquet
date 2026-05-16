@@ -64,8 +64,26 @@ The bouquet arranging experience is the main product value.
 - Multiplayer
 - Social feed
 - Notifications
-- Desktop optimization
 - Advanced flower physics
+
+
+---
+
+# Interaction Model
+
+## Mobile
+- **Drag**: one-finger drag to move flowers
+- **Resize + Rotate**: two-finger pinch gesture to scale and rotate simultaneously
+- Tapping a flower makes it the active target for pinch gestures
+
+## Desktop
+- **Drag**: click and drag to move flowers
+- **Select**: clicking a flower selects it (brings to front, shows rotation handle)
+- **Rotate**: drag the rotation handle below the selected flower in a circular motion
+- **Resize**: trackpad pinch to scale the active flower
+- **Deselect**: click the canvas background to deselect
+- The rotation handle stays a fixed visual size regardless of flower zoom level
+- The rotation handle is idle (white) by default and turns purple while actively rotating
 
 
 ---
