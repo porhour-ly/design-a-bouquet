@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useGesture } from "@use-gesture/react";
 import dynamic from "next/dynamic";
-import FlowerPicker from "./FlowerPicker";
+import AssetPicker from "./AssetPicker";
 
 const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
   ssr: false,
@@ -100,6 +100,12 @@ export default function FlowerCanvas() {
     );
   }, []);
 
+  const handleDelete = useCallback((id: string) => {
+    setFlowers((prev) => prev.filter((f) => f.id !== id));
+    setSelectedId(null);
+    activeFlowerId.current = null;
+  }, []);
+
   const handleDragStart = useCallback((id: string) => {
     activeFlowerId.current = id;
     setSelectedId(id);
@@ -179,11 +185,12 @@ export default function FlowerCanvas() {
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
             onRotateEnd={handleRotateEnd}
+            onDelete={handleDelete}
             registerTransformHandler={registerTransformHandler}
           />
         ))}
       </div>
-      <FlowerPicker onSelect={addFlower} />
+      <AssetPicker onSelect={addFlower} />
     </>
   );
 }

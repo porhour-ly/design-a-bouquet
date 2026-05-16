@@ -16,6 +16,7 @@ interface DraggableFlowerProps {
   onDragEnd: (id: string, x: number, y: number) => void;
   onDragStart: (id: string) => void;
   onRotateEnd: (id: string, rotation: number) => void;
+  onDelete: (id: string) => void;
   registerTransformHandler: (
     id: string,
     handler: {
@@ -39,6 +40,7 @@ export default function DraggableFlower({
   onDragEnd,
   onDragStart,
   onRotateEnd,
+  onDelete,
   registerTransformHandler,
 }: DraggableFlowerProps) {
   const motionX = useMotionValue(x);
@@ -47,6 +49,7 @@ export default function DraggableFlower({
   const motionRotate = useMotionValue(baseRotation);
   const ref = useRef<HTMLDivElement>(null!);
   const handleRef = useRef<HTMLDivElement>(null);
+  const deleteRef = useRef<HTMLDivElement>(null);
   const rotateState = useRef<{ startAngle: number; baseRotation: number } | null>(null);
   // Counter-scale so the handle stays a fixed visual size regardless of flower zoom
   const inverseScale = useTransform(motionScale, (s) => 1 / s);
@@ -144,6 +147,23 @@ export default function DraggableFlower({
     };
   }, [isSelected, id, getFlowerCenter, motionRotate, onRotateEnd]);
 
+  // Raw DOM listener for delete button to bypass @use-gesture drag
+  useEffect(() => {
+    const btn = deleteRef.current;
+    if (!btn) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      onDelete(id);
+    };
+
+    btn.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      btn.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [isSelected, id, onDelete]);
+
   return (
     <motion.div
       ref={ref}
@@ -162,6 +182,34 @@ export default function DraggableFlower({
       className="select-none"
     >
       <span className="text-5xl block">{type}</span>
+      {isSelected && (
+        <motion.div
+          ref={deleteRef}
+          style={{
+            position: "absolute",
+            right: -14,
+            top: -14,
+            scale: inverseScale,
+            width: 24,
+            height: 24,
+            borderRadius: "50%",
+            background: "#ef4444",
+            border: "2px solid white",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 13,
+            fontWeight: 700,
+            lineHeight: 1,
+            color: "white",
+            cursor: "pointer",
+            userSelect: "none",
+          }}
+        >
+          ✕
+        </motion.div>
+      )}
       {isSelected && isDesktop && (
         <motion.div
           ref={handleRef}
