@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useGesture } from "@use-gesture/react";
+import type { Rect } from "./wrappers/types";
+import { applySoftBoundary, clampToRect, isInsideRect } from "./bouquetConstraints";
 
 interface DraggableFlowerProps {
   id: string;
@@ -13,6 +15,7 @@ interface DraggableFlowerProps {
   rotation: number;
   zIndex: number;
   isSelected: boolean;
+  compositionZone?: Rect;
   onDragEnd: (id: string, x: number, y: number) => void;
   onDragStart: (id: string) => void;
   onRotateEnd: (id: string, rotation: number) => void;
@@ -37,6 +40,7 @@ export default function DraggableFlower({
   rotation: baseRotation,
   zIndex,
   isSelected,
+  compositionZone,
   onDragEnd,
   onDragStart,
   onRotateEnd,
@@ -68,14 +72,51 @@ export default function DraggableFlower({
     });
   }, [id, registerTransformHandler, motionScale, motionRotate]);
 
+  // Store compositionZone in a ref so the gesture handler always sees the latest value
+  const zoneRef = useRef(compositionZone);
+  useEffect(() => {
+    zoneRef.current = compositionZone;
+  }, [compositionZone]);
+
   useGesture(
     {
       onDragStart: () => onDragStart(id),
       onDrag: ({ offset: [ox, oy] }) => {
-        motionX.set(ox);
-        motionY.set(oy);
+        const zone = zoneRef.current;
+        if (zone) {
+          const bounded = applySoftBoundary(ox, oy, zone);
+          motionX.set(bounded.x);
+          motionY.set(bounded.y);
+        } else {
+          motionX.set(ox);
+          motionY.set(oy);
+        }
       },
-      onDragEnd: () => onDragEnd(id, motionX.get(), motionY.get()),
+      onDragEnd: () => {
+        const zone = zoneRef.current;
+        const currentX = motionX.get();
+        const currentY = motionY.get();
+
+        if (zone && !isInsideRect(currentX, currentY, zone)) {
+          const clamped = clampToRect(currentX, currentY, zone);
+          // Spring-animate back to nearest valid position
+          animate(motionX, clamped.x, {
+            type: "spring",
+            stiffness: 300,
+            damping: 25,
+          });
+          animate(motionY, clamped.y, {
+            type: "spring",
+            stiffness: 300,
+            damping: 25,
+            onComplete: () => {
+              onDragEnd(id, clamped.x, clamped.y);
+            },
+          });
+        } else {
+          onDragEnd(id, currentX, currentY);
+        }
+      },
     },
     {
       target: ref,

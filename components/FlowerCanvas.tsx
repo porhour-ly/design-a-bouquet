@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useGesture } from "@use-gesture/react";
 import dynamic from "next/dynamic";
 import AssetPicker from "./AssetPicker";
+import { WRAPPER_REGISTRY, SvgWrapper } from "./wrappers";
+import type { WrapperType, Rect } from "./wrappers";
+import {
+  computeWrapperPosition,
+  getViewportZone,
+  getSpawnPosition,
+  clampToRect,
+} from "./bouquetConstraints";
 
 const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
   ssr: false,
@@ -22,6 +30,8 @@ interface Flower {
 export default function FlowerCanvas() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeWrapper, setActiveWrapper] = useState<WrapperType>("paper-wrap");
+  const [wrapperPos, setWrapperPos] = useState({ x: 0, y: 0 });
   const nextZIndex = useRef(1);
   const canvasRef = useRef<HTMLDivElement>(null!);
   const activeFlowerId = useRef<string | null>(null);
@@ -37,6 +47,27 @@ export default function FlowerCanvas() {
       }
     >()
   );
+
+  const { zone, assets } = WRAPPER_REGISTRY[activeWrapper];
+
+  // Compute wrapper position on mount and resize
+  useEffect(() => {
+    const update = () => {
+      const pos = computeWrapperPosition(
+        window.innerWidth,
+        window.innerHeight,
+        zone.width,
+        zone.height
+      );
+      setWrapperPos(pos);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [zone.width, zone.height]);
+
+  // Compute the composition zone in viewport coordinates
+  const compositionZoneVP: Rect = getViewportZone(zone.compositionZone, wrapperPos);
 
   const registerTransformHandler = useCallback(
     (
@@ -56,28 +87,29 @@ export default function FlowerCanvas() {
     []
   );
 
-  const addFlower = useCallback((type: string) => {
-    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    const centerX = window.innerWidth / 2 - 24;
-    const centerY = window.innerHeight / 2 - 24;
-    const offsetX = (Math.random() - 0.5) * 60;
-    const offsetY = (Math.random() - 0.5) * 60;
+  const addFlower = useCallback(
+    (type: string) => {
+      const id =
+        Math.random().toString(36).slice(2) + Date.now().toString(36);
+      const spawnPos = getSpawnPosition(zone, wrapperPos);
 
-    setFlowers((prev) => [
-      ...prev,
-      {
-        id,
-        type,
-        x: centerX + offsetX,
-        y: centerY + offsetY,
-        scale: 1,
-        rotation: 0,
-        zIndex: nextZIndex.current++,
-      },
-    ]);
-    activeFlowerId.current = id;
-    setSelectedId(id);
-  }, []);
+      setFlowers((prev) => [
+        ...prev,
+        {
+          id,
+          type,
+          x: spawnPos.x,
+          y: spawnPos.y,
+          scale: 1,
+          rotation: 0,
+          zIndex: nextZIndex.current++,
+        },
+      ]);
+      activeFlowerId.current = id;
+      setSelectedId(id);
+    },
+    [zone, wrapperPos]
+  );
 
   const handleDragEnd = useCallback((id: string, x: number, y: number) => {
     setFlowers((prev) =>
@@ -116,11 +148,33 @@ export default function FlowerCanvas() {
   }, []);
 
   const handleCanvasPointerDown = useCallback((e: React.PointerEvent) => {
-    // Only deselect if clicking directly on the canvas background
     if (e.target === e.currentTarget) {
       setSelectedId(null);
     }
   }, []);
+
+  const handleWrapperSelect = useCallback(
+    (type: WrapperType) => {
+      setActiveWrapper(type);
+      // Re-clamp flowers to new composition zone
+      const newZone = WRAPPER_REGISTRY[type].zone;
+      const newPos = computeWrapperPosition(
+        window.innerWidth,
+        window.innerHeight,
+        newZone.width,
+        newZone.height
+      );
+      setWrapperPos(newPos);
+      const newCompZone = getViewportZone(newZone.compositionZone, newPos);
+      setFlowers((prev) =>
+        prev.map((f) => {
+          const clamped = clampToRect(f.x, f.y, newCompZone);
+          return { ...f, x: clamped.x, y: clamped.y };
+        })
+      );
+    },
+    []
+  );
 
   useGesture(
     {
@@ -177,11 +231,25 @@ export default function FlowerCanvas() {
         style={{ touchAction: "none" }}
         onPointerDown={handleCanvasPointerDown}
       >
+        {/* Wrapper back layer (behind flowers) */}
+        <div
+          style={{
+            position: "absolute",
+            left: wrapperPos.x,
+            top: wrapperPos.y,
+            zIndex: 0,
+          }}
+        >
+          <SvgWrapper src={assets.backSvg} width={zone.width} height={zone.height} />
+        </div>
+
+        {/* Flowers */}
         {flowers.map((flower) => (
           <DraggableFlower
             key={flower.id}
             {...flower}
             isSelected={flower.id === selectedId}
+            compositionZone={compositionZoneVP}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
             onRotateEnd={handleRotateEnd}
@@ -189,8 +257,25 @@ export default function FlowerCanvas() {
             registerTransformHandler={registerTransformHandler}
           />
         ))}
+
+        {/* Wrapper front layer (in front of flowers) */}
+        <div
+          style={{
+            position: "absolute",
+            left: wrapperPos.x,
+            top: wrapperPos.y,
+            zIndex: 999999,
+            pointerEvents: "none",
+          }}
+        >
+          <SvgWrapper src={assets.frontSvg} width={zone.width} height={zone.height} />
+        </div>
       </div>
-      <AssetPicker onSelect={addFlower} />
+      <AssetPicker
+        onSelect={addFlower}
+        onWrapperSelect={handleWrapperSelect}
+        activeWrapper={activeWrapper}
+      />
     </>
   );
 }

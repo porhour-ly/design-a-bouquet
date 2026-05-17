@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="560" viewBox="0 0 340 560">
+  <defs>
+    <linearGradient id="pwf-kraft" x1="0.9" y1="0" x2="0.1" y2="1">
+      <stop offset="0%" stop-color="#d4b896"/>
+      <stop offset="35%" stop-color="#c9a87c"/>
+      <stop offset="70%" stop-color="#b8956a"/>
+      <stop offset="100%" stop-color="#a88560"/>
+    </linearGradient>
+    <linearGradient id="pwf-ribbon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8c9a0"/>
+      <stop offset="100%" stop-color="#d4b080"/>
+    </linearGradient>
+    <clipPath id="pwf-trap">
+      <!-- Trapezoid in handle zone: top at y=437, bottom at y=560 -->
+      <polygon points="27.2,437 312.8,437 265.2,560 74.8,560"/>
+    </clipPath>
+    <pattern id="pwf-texture" patternUnits="userSpaceOnUse" width="4" height="6">
+      <rect width="4" height="6" fill="transparent"/>
+      <rect x="3" y="0" width="1" height="6" fill="rgba(255,255,255,0.04)"/>
+      <rect x="0" y="5" width="4" height="1" fill="rgba(0,0,0,0.03)"/>
+    </pattern>
+  </defs>
+
+  <!-- Kraft paper stem wrap (in front of flowers) -->
+  <g clip-path="url(#pwf-trap)">
+    <rect y="437" width="340" height="123" fill="url(#pwf-kraft)"/>
+    <!-- Paper texture -->
+    <rect y="437" width="340" height="123" fill="url(#pwf-texture)" opacity="0.8"/>
+    <!-- Fold crease -->
+    <line x1="95" y1="474" x2="245" y2="474" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+    <!-- Ribbon accent -->
+    <rect x="119" y="455" width="102" height="8" rx="4" fill="url(#pwf-ribbon)"/>
+  </g>
+</svg>

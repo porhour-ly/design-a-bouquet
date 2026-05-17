@@ -22,3 +22,70 @@ Use `useTransform(motionScale, s => 1/s)` from framer-motion to create an invers
 
 ### Detecting touch vs desktop
 Use `window.matchMedia("(pointer: coarse)").matches` inside a `useEffect` to detect touch devices. Gate desktop-only UI (like the rotation handle) behind this check. Do not use user-agent sniffing.
+
+## Bouquet Geometry System
+
+The bouquet wrapper is NOT just a visual decoration.
+
+It defines the structure, composition boundaries, and interaction model of the bouquet editor.
+
+The experience should NOT behave like:
+
+* an infinite canvas
+* a generic sticker editor
+* a design tool
+
+Instead, the bouquet should behave like a guided composition system.
+
+### Bouquet Regions
+
+#### Bouquet Composition Zone
+
+The upper bouquet opening area where flowers and greenery can exist.
+
+This is the editable interaction space.
+
+Flowers should:
+
+* emerge upward from the bouquet opening
+* cluster naturally
+* overlap organically
+* visually layer like real bouquet arrangements
+
+The system should subtly guide users toward aesthetically pleasing compositions.
+
+#### Wrapper Handle Zone
+
+The lower wrapped portion of the bouquet.
+
+This area:
+
+* is non-editable
+* should not contain flowers
+* visually anchors the bouquet
+* creates natural composition constraints
+
+### Composition Rules
+
+* Flowers should remain mostly within bouquet boundaries
+* Slight overflow is allowed for realism
+* Placement should feel forgiving
+* Subtle snapping and positional assistance are encouraged
+* The system should quietly help users create attractive arrangements
+
+Avoid:
+
+* chaotic free placement
+* excessive precision requirements
+* rigid design-tool behavior
+
+### Interaction Goals
+
+Users should feel:
+
+* creative
+* relaxed
+* visually guided
+* naturally successful at arranging bouquets
+
+The app should help users make aesthetically pleasing bouquets even without design skills.

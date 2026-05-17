@@ -17,15 +17,73 @@ The app should feel playful, tactile, emotional, and visually delightful.
 
 ---
 
+# Bouquet Composition System
+
+The bouquet wrapper is the central composition structure of the experience.
+
+Instead of arranging flowers on a completely open canvas, users arrange flowers within a guided bouquet composition zone.
+
+The bouquet is divided into two regions:
+
+## 1. Bouquet Composition Zone
+
+The upper/opening portion of the bouquet where flowers and greenery can exist.
+
+This is the editable interaction area.
+
+Flowers should:
+
+* emerge upward from the bouquet opening
+* naturally cluster together
+* visually layer like a real bouquet
+* remain mostly within bouquet boundaries
+* slightly overflow naturally when appropriate
+
+The system should subtly guide users toward aesthetically pleasing bouquet arrangements.
+
+## 2. Wrapper Handle Zone
+
+The lower wrapped stem area of the bouquet.
+
+This area is NOT editable and should not contain flowers.
+
+The handle zone exists to:
+
+* preserve bouquet realism
+* visually anchor the bouquet
+* prevent awkward placements
+* create natural composition constraints
+
+
+---
+
 # Core Experience
 
 Users should be able to:
-1. Add flowers onto a bouquet canvas
-2. Move flowers around naturally
-3. Resize and rotate flowers
-4. Layer flowers visually
-5. Add a short note
-6. Share the bouquet via link
+1. Select flowers and greenery from a tray
+2. Arrange flowers within the bouquet composition zone
+3. Drag flowers naturally within bouquet boundaries
+4. Resize and rotate flowers intuitively
+5. Create layered bouquet compositions
+6. Customize bouquet wrappers
+7. Add a short message card
+8. Share the bouquet via link
+
+
+---
+
+# Composition Philosophy
+
+The experience should feel guided rather than fully freeform.
+
+Users should feel naturally assisted toward creating beautiful bouquets through:
+
+* spatial constraints
+* layering behavior
+* bouquet structure
+* subtle snapping and clustering
+
+The experience should feel more like arranging a real bouquet and less like editing a generic sticker canvas.
 
 
 ---
