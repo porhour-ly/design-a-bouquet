@@ -21,9 +21,18 @@ export interface BouquetZoneConfig {
   anchorPoint: Point;
 }
 
-export interface WrapperAssets {
-  backSvg: string;
-  frontSvg: string;
+export interface WrapperLayer {
+  src: string;
+  /** Offset from wrapper origin */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
-export type WrapperType = "paper-wrap" | "floral-frame" | "fabric-ribbon";
+export interface WrapperAssets {
+  back: WrapperLayer;
+  front: WrapperLayer;
+}
+
+export type WrapperType = "paper-wrap" | "floral-frame" | "fabric-ribbon" | "template";

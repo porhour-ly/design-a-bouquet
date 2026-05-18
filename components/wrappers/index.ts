@@ -7,83 +7,110 @@ export interface WrapperEntry {
   icon: string;
 }
 
-// --- Zone configs (preserved from the old components) ---
+// ---------------------------------------------------------------------------
+// Template convention (see public/wrappers/template-above.svg & template-below.svg)
+//
+// Both SVGs share the same native width. They compose as follows:
+//
+//   ┌─────────────────┐  ← back (below) at y=0
+//   │                 │
+//   │     below       │
+//   │        ┌────────┤──┐  ← front (above) at y = backH × 0.5
+//   │        │overlap │  │
+//   └────────┤────────┘  │
+//            │  above    │
+//            └───────────┘
+//
+// - back sits at y=0
+// - front is offset down by 50% of the back's rendered height
+// - total height = max(backH, frontY + frontH)
+// - composition zone: upper 50% of total (where flowers live)
+// - handle zone: lower 50% of total (no flowers)
+//
+// To add a new wrapper: provide two SVGs following this layout, then call
+// createWrapper() with the SVG paths, native dimensions, and scale.
+// ---------------------------------------------------------------------------
 
-const PAPER_WRAP_W = 340;
-const PAPER_WRAP_H = 560;
-const PAPER_WRAP_HANDLE_H = Math.round(PAPER_WRAP_H * 0.22);
-const PAPER_WRAP_COMP_H = PAPER_WRAP_H - PAPER_WRAP_HANDLE_H;
+function createWrapper(
+  backSvg: string,
+  frontSvg: string,
+  nativeWidth: number,
+  nativeBackHeight: number,
+  nativeFrontHeight: number,
+  scale: number,
+): { assets: WrapperAssets; zone: BouquetZoneConfig } {
+  const w = Math.round(nativeWidth * scale);
+  const backH = Math.round(nativeBackHeight * scale);
+  const frontH = Math.round(nativeFrontHeight * scale);
+  const frontY = Math.round(backH * 0.5);
+  const totalH = Math.max(backH, frontY + frontH);
+  const compH = Math.round(totalH * 0.5);
 
-const PAPER_WRAP_ZONE: BouquetZoneConfig = {
-  width: PAPER_WRAP_W,
-  height: PAPER_WRAP_H,
-  compositionZone: { x: 0, y: 0, width: PAPER_WRAP_W, height: PAPER_WRAP_COMP_H },
-  handleZone: { x: 0, y: PAPER_WRAP_COMP_H, width: PAPER_WRAP_W, height: PAPER_WRAP_HANDLE_H },
-  anchorPoint: { x: PAPER_WRAP_W / 2, y: PAPER_WRAP_COMP_H * 0.45 },
-};
+  return {
+    assets: {
+      back: { src: backSvg, x: 0, y: 0, width: w, height: backH },
+      front: { src: frontSvg, x: 0, y: frontY, width: w, height: frontH },
+    },
+    zone: {
+      width: w,
+      height: totalH,
+      compositionZone: { x: 0, y: 0, width: w, height: compH },
+      handleZone: { x: 0, y: compH, width: w, height: totalH - compH },
+      anchorPoint: { x: w / 2, y: Math.round(compH * 0.5) },
+    },
+  };
+}
 
-const FLORAL_FRAME_W = 320;
-const FLORAL_FRAME_H = 520;
-const FLORAL_FRAME_BORDER = 24;
+// --- Wrapper definitions ---
 
-const FLORAL_FRAME_ZONE: BouquetZoneConfig = {
-  width: FLORAL_FRAME_W,
-  height: FLORAL_FRAME_H,
-  compositionZone: {
-    x: FLORAL_FRAME_BORDER,
-    y: FLORAL_FRAME_BORDER,
-    width: FLORAL_FRAME_W - FLORAL_FRAME_BORDER * 2,
-    height: FLORAL_FRAME_H - FLORAL_FRAME_BORDER * 2,
-  },
-  handleZone: { x: 0, y: 0, width: 0, height: 0 },
-  anchorPoint: { x: FLORAL_FRAME_W / 2, y: FLORAL_FRAME_H / 2 },
-};
+const paperWrap = createWrapper(
+  "/wrappers/paper-wrap-back.svg",
+  "/wrappers/paper-wrap-front.svg",
+  181, 149, 162, 2.5,
+);
 
-const FABRIC_RIBBON_W = 340;
-const FABRIC_RIBBON_H = 560;
-const FABRIC_RIBBON_Y = Math.round(FABRIC_RIBBON_H * 0.75);
-const FABRIC_RIBBON_COMP_H = FABRIC_RIBBON_Y;
-const FABRIC_RIBBON_HANDLE_H = FABRIC_RIBBON_H - FABRIC_RIBBON_Y;
+const floralFrame = createWrapper(
+  "/wrappers/floral-frame-back.svg",
+  "/wrappers/floral-frame-front.svg",
+  320, 520, 520, 1,
+);
 
-const FABRIC_RIBBON_ZONE: BouquetZoneConfig = {
-  width: FABRIC_RIBBON_W,
-  height: FABRIC_RIBBON_H,
-  compositionZone: { x: 0, y: 0, width: FABRIC_RIBBON_W, height: FABRIC_RIBBON_COMP_H },
-  handleZone: { x: 0, y: FABRIC_RIBBON_Y, width: FABRIC_RIBBON_W, height: FABRIC_RIBBON_HANDLE_H },
-  anchorPoint: { x: FABRIC_RIBBON_W / 2, y: FABRIC_RIBBON_COMP_H * 0.45 },
-};
+const fabricRibbon = createWrapper(
+  "/wrappers/fabric-ribbon-back.svg",
+  "/wrappers/fabric-ribbon-front.svg",
+  340, 560, 560, 1,
+);
+
+const template = createWrapper(
+  "/wrappers/template-below.svg",
+  "/wrappers/template-above.svg",
+  160, 100, 100, 3,
+);
 
 // --- Registry ---
 
 export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
   "paper-wrap": {
-    assets: {
-      backSvg: "/wrappers/paper-wrap-back.svg",
-      frontSvg: "/wrappers/paper-wrap-front.svg",
-    },
-    zone: PAPER_WRAP_ZONE,
+    ...paperWrap,
     label: "Paper",
     icon: "📜",
   },
   "floral-frame": {
-    assets: {
-      backSvg: "/wrappers/floral-frame-back.svg",
-      frontSvg: "/wrappers/floral-frame-front.svg",
-    },
-    zone: FLORAL_FRAME_ZONE,
+    ...floralFrame,
     label: "Frame",
     icon: "🌿",
   },
   "fabric-ribbon": {
-    assets: {
-      backSvg: "/wrappers/fabric-ribbon-back.svg",
-      frontSvg: "/wrappers/fabric-ribbon-front.svg",
-    },
-    zone: FABRIC_RIBBON_ZONE,
+    ...fabricRibbon,
     label: "Fabric",
     icon: "🎀",
+  },
+  "template": {
+    ...template,
+    label: "Template",
+    icon: "📐",
   },
 };
 
 export { default as SvgWrapper } from "./SvgWrapper";
-export type { WrapperType, BouquetZoneConfig, WrapperAssets, Rect, Point } from "./types";
+export type { WrapperType, BouquetZoneConfig, WrapperAssets, WrapperLayer, Rect, Point } from "./types";

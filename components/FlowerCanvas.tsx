@@ -235,12 +235,12 @@ export default function FlowerCanvas() {
         <div
           style={{
             position: "absolute",
-            left: wrapperPos.x,
-            top: wrapperPos.y,
+            left: wrapperPos.x + assets.back.x,
+            top: wrapperPos.y + assets.back.y,
             zIndex: 0,
           }}
         >
-          <SvgWrapper src={assets.backSvg} width={zone.width} height={zone.height} />
+          <SvgWrapper src={assets.back.src} width={assets.back.width} height={assets.back.height} />
         </div>
 
         {/* Flowers */}
@@ -262,13 +262,13 @@ export default function FlowerCanvas() {
         <div
           style={{
             position: "absolute",
-            left: wrapperPos.x,
-            top: wrapperPos.y,
+            left: wrapperPos.x + assets.front.x,
+            top: wrapperPos.y + assets.front.y,
             zIndex: 999999,
             pointerEvents: "none",
           }}
         >
-          <SvgWrapper src={assets.frontSvg} width={zone.width} height={zone.height} />
+          <SvgWrapper src={assets.front.src} width={assets.front.width} height={assets.front.height} />
         </div>
       </div>
       <AssetPicker

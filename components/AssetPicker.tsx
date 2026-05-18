@@ -39,7 +39,7 @@ const CATEGORIES: Category[] = [
   },
 ];
 
-const WRAPPER_TYPES: WrapperType[] = ["paper-wrap", "floral-frame", "fabric-ribbon"];
+const WRAPPER_TYPES: WrapperType[] = ["paper-wrap", "floral-frame", "fabric-ribbon", "template"];
 
 export default function AssetPicker({
   onSelect,
