@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { WRAPPER_REGISTRY } from "./wrappers";
 import type { WrapperType } from "./wrappers";
 
@@ -195,108 +195,89 @@ export default function AssetPicker({
             msOverflowStyle: "none",
           }}
         >
-          <AnimatePresence mode="popLayout">
-            {isWrapperCategory
-              ? WRAPPER_TYPES.map((wType, i) => {
-                  const entry = WRAPPER_REGISTRY[wType];
-                  const isActive = activeWrapper === wType;
-                  return (
-                    <motion.button
-                      key={`wrapper-${wType}`}
-                      initial={{ opacity: 0, scale: 0.7, y: 8 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.7, y: 8 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 28,
-                        delay: i * 0.03,
-                      }}
-                      onClick={() => onWrapperSelect(wType)}
-                      whileTap={{ scale: 0.85 }}
-                      style={{
-                        flexShrink: 0,
-                        width: 72,
-                        height: 52,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 2,
-                        fontSize: 22,
-                        borderRadius: 14,
-                        border: isActive
-                          ? "2px solid rgba(168, 130, 90, 0.6)"
-                          : "1px solid rgba(200, 180, 150, 0.25)",
-                        background: isActive
-                          ? "rgba(168, 130, 90, 0.12)"
-                          : "rgba(255, 255, 255, 0.55)",
-                        cursor: "pointer",
-                        WebkitTapHighlightColor: "transparent",
-                        transition:
-                          "background 0.15s, border-color 0.15s",
-                      }}
-                    >
-                      <span>{entry.icon}</span>
-                      <span
-                        style={{
-                          fontSize: 9,
-                          fontWeight: isActive ? 600 : 500,
-                          color: isActive ? "#6b4c2a" : "#9c8b7a",
-                          letterSpacing: "0.02em",
-                          fontFamily:
-                            '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-                        }}
-                      >
-                        {entry.label}
-                      </span>
-                    </motion.button>
-                  );
-                })
-              : currentItems.map((item, i) => (
+          {isWrapperCategory
+            ? WRAPPER_TYPES.map((wType) => {
+                const entry = WRAPPER_REGISTRY[wType];
+                const isActive = activeWrapper === wType;
+                return (
                   <motion.button
-                    key={`${activeCategory}-${item}-${i}`}
-                    initial={{ opacity: 0, scale: 0.7, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.7, y: 8 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 28,
-                      delay: i * 0.03,
-                    }}
-                    onClick={() => onSelect(item)}
+                    key={`wrapper-${wType}`}
+                    initial={false}
                     whileTap={{ scale: 0.85 }}
+                    onClick={() => onWrapperSelect(wType)}
                     style={{
                       flexShrink: 0,
-                      width: 52,
+                      width: 72,
                       height: 52,
                       display: "flex",
+                      flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 30,
+                      gap: 2,
+                      fontSize: 22,
                       borderRadius: 14,
-                      border: "1px solid rgba(200, 180, 150, 0.25)",
-                      background: "rgba(255, 255, 255, 0.55)",
+                      border: isActive
+                        ? "2px solid rgba(168, 130, 90, 0.6)"
+                        : "1px solid rgba(200, 180, 150, 0.25)",
+                      background: isActive
+                        ? "rgba(168, 130, 90, 0.12)"
+                        : "rgba(255, 255, 255, 0.55)",
                       cursor: "pointer",
                       WebkitTapHighlightColor: "transparent",
                       transition: "background 0.15s, border-color 0.15s",
                     }}
-                    onPointerEnter={(e) => {
-                      const el = e.currentTarget;
-                      el.style.background = "rgba(255, 255, 255, 0.9)";
-                      el.style.borderColor = "rgba(180, 150, 110, 0.4)";
-                    }}
-                    onPointerLeave={(e) => {
-                      const el = e.currentTarget;
-                      el.style.background = "rgba(255, 255, 255, 0.55)";
-                      el.style.borderColor = "rgba(200, 180, 150, 0.25)";
-                    }}
                   >
-                    {item}
+                    <span>{entry.icon}</span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: isActive ? 600 : 500,
+                        color: isActive ? "#6b4c2a" : "#9c8b7a",
+                        letterSpacing: "0.02em",
+                        fontFamily:
+                          '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+                      }}
+                    >
+                      {entry.label}
+                    </span>
                   </motion.button>
-                ))}
-          </AnimatePresence>
+                );
+              })
+            : currentItems.map((item, i) => (
+                <motion.button
+                  key={`${activeCategory}-${item}-${i}`}
+                  initial={false}
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => onSelect(item)}
+                  style={{
+                    flexShrink: 0,
+                    width: 52,
+                    height: 52,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 30,
+                    borderRadius: 14,
+                    border: "1px solid rgba(200, 180, 150, 0.25)",
+                    background: "rgba(255, 255, 255, 0.55)",
+                    cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                    transition: "background 0.15s, border-color 0.15s",
+                  }}
+                  onPointerEnter={(e) => {
+                    const el = e.currentTarget;
+                    el.style.background = "rgba(255, 255, 255, 0.9)";
+                    el.style.borderColor = "rgba(180, 150, 110, 0.4)";
+                  }}
+                  onPointerLeave={(e) => {
+                    const el = e.currentTarget;
+                    el.style.background = "rgba(255, 255, 255, 0.55)";
+                    el.style.borderColor = "rgba(200, 180, 150, 0.25)";
+                  }}
+                >
+                  {item}
+                </motion.button>
+              ))}
         </div>
       </div>
     </div>

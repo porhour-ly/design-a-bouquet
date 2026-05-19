@@ -213,7 +213,7 @@ export default function DraggableFlower({
         y: motionY,
         scale: motionScale,
         rotate: motionRotate,
-        zIndex,
+        zIndex: isSelected ? zIndex + 1000000 : zIndex,
         position: "absolute",
         left: 0,
         top: 0,
@@ -272,7 +272,7 @@ export default function DraggableFlower({
             fontSize: 16,
             color: "#6b7280",
             transition: "background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s",
-            cursor: "grab",
+            cursor: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 8.3a8 8 0 0 1 11.6-3'/%3E%3Cpath d='M19.5 15.7a8 8 0 0 1-11.6 3'/%3E%3Cpolyline points='2 5.5 4.5 8.3 7.5 6'/%3E%3Cpolyline points='22 18.5 19.5 15.7 16.5 18'/%3E%3C/svg%3E") 12 12, grab`,
             userSelect: "none",
           }}
         >
