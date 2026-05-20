@@ -2,6 +2,19 @@
 
 ## Lessons Learned
 
+### **Mobile debugging: check cross-origin dev access FIRST**
+When the app loads on mobile but buttons/interactions don't work (zero visual feedback on tap), the most likely cause is Next.js blocking cross-origin dev resource requests. The page HTML loads but JavaScript is blocked, so React never hydrates and nothing is interactive.
+
+**Fix**: Add the local network IP to `allowedDevOrigins` in `next.config.ts`:
+```ts
+allowedDevOrigins: ["192.168.0.159"],
+```
+If the IP changes (different WiFi), update it. Find current IP with `ipconfig getifaddr en0`.
+
+**Symptoms**: Page renders, buttons visible but completely unresponsive, WebSocket HMR errors in console like `WebSocket connection to 'ws://192.168.0.159:3000/_next/webpack-hmr' failed`.
+
+Always check this before investigating gesture libraries, z-index, or touch-action issues.
+
 ### @use-gesture/react pinch + wheel gotcha on mobile Safari
 Do NOT add `onWheel`/`onWheelEnd` handlers to the same `useGesture` call that has `onPinch` when using `target`. On mobile Safari, registering wheel gesture handlers on the canvas causes touch event interference that prevents child components (like DraggableFlower) from rendering. Keep pinch and wheel gestures in separate `useGesture` calls if both are needed.
 

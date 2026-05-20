@@ -85,7 +85,8 @@ export default function AssetPicker({
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 50,
+        zIndex: 1000001,
+        touchAction: "manipulation",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >

@@ -220,7 +220,7 @@ export default function FlowerCanvas() {
       <div
         ref={canvasRef}
         className="fixed inset-0 overflow-hidden"
-        style={{ touchAction: "none" }}
+        style={{ touchAction: "none", zIndex: 0 }}
         onPointerDown={handleCanvasPointerDown}
       >
         {/* Wrapper back layer (behind flowers) */}
