@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useGesture } from "@use-gesture/react";
 import dynamic from "next/dynamic";
 import AssetPicker from "./AssetPicker";
+import SaveButton from "./SaveButton";
 import { WRAPPER_REGISTRY, SvgWrapper } from "./wrappers";
 import type { WrapperType, Rect } from "./wrappers";
 import {
@@ -12,20 +13,11 @@ import {
   getSpawnPosition,
   clampToRect,
 } from "./bouquetConstraints";
+import type { Flower } from "@/lib/bouquetData";
 
 const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
   ssr: false,
 });
-
-interface Flower {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  scale: number;
-  rotation: number;
-  zIndex: number;
-}
 
 export default function FlowerCanvas() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
@@ -271,6 +263,11 @@ export default function FlowerCanvas() {
           <SvgWrapper src={assets.front.src} width={assets.front.width} height={assets.front.height} />
         </div>
       </div>
+      <SaveButton
+        flowers={flowers}
+        activeWrapper={activeWrapper}
+        compositionZoneVP={compositionZoneVP}
+      />
       <AssetPicker
         onSelect={addFlower}
         onWrapperSelect={handleWrapperSelect}

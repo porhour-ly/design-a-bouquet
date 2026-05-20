@@ -23,6 +23,12 @@ Use `useTransform(motionScale, s => 1/s)` from framer-motion to create an invers
 ### Detecting touch vs desktop
 Use `window.matchMedia("(pointer: coarse)").matches` inside a `useEffect` to detect touch devices. Gate desktop-only UI (like the rotation handle) behind this check. Do not use user-agent sniffing.
 
+### Supabase lazy client initialization
+The Supabase client in `lib/supabase.ts` uses lazy initialization via `getSupabase()` instead of a top-level `createClient()` call. This is required because Next.js evaluates API route modules at build time during static analysis — a top-level call throws `supabaseUrl is required` when env vars aren't available during `next build`.
+
+### Coordinate normalization for persistence
+Flower x/y positions are viewport-absolute pixels. To persist and share bouquets across different screen sizes, coordinates are normalized to 0..1 relative to the composition zone before saving (`lib/bouquetData.ts`). Values outside 0..1 are valid (slight overflow is allowed by design). The shared view page (`/b/[id]`) denormalizes on load and re-denormalizes on window resize.
+
 ## Bouquet Geometry System
 
 The bouquet wrapper is NOT just a visual decoration.
