@@ -22,7 +22,7 @@ const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
 export default function FlowerCanvas() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeWrapper, setActiveWrapper] = useState<WrapperType>("paper-wrap");
+  const [activeWrapper, setActiveWrapper] = useState<WrapperType>("pink-bouquet");
   const [wrapperPos, setWrapperPos] = useState({ x: 0, y: 0 });
   const nextZIndex = useRef(1);
   const canvasRef = useRef<HTMLDivElement>(null!);

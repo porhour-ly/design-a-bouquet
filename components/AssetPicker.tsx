@@ -11,11 +11,20 @@ interface AssetPickerProps {
   activeWrapper: WrapperType;
 }
 
+interface FlowerItem {
+  type: string;
+  label: string;
+}
+
 interface Category {
   id: string;
   label: string;
   icon: string;
-  items: string[];
+  items: FlowerItem[];
+}
+
+function isImageType(type: string) {
+  return type.startsWith("/");
 }
 
 const CATEGORIES: Category[] = [
@@ -23,13 +32,18 @@ const CATEGORIES: Category[] = [
     id: "flowers",
     label: "Flowers",
     icon: "🌸",
-    items: ["🌸", "🌷", "🌹", "🌻", "🌺", "💐", "🪷", "🌼", "💮", "🏵️"],
+    items: [
+      { type: "/flowers/rose.png", label: "Rose" },
+      { type: "/flowers/dahlia.png", label: "Dahlia" },
+    ],
   },
   {
     id: "greenery",
     label: "Greenery",
     icon: "🌿",
-    items: ["🌿", "🍃", "🌱", "🍀", "☘️", "🪴", "🌾", "🎋", "🎍", "🪻"],
+    items: [
+      { type: "/greenerys/euclayptus.png", label: "Eucalyptus" },
+    ],
   },
   {
     id: "wrapper",
@@ -39,7 +53,7 @@ const CATEGORIES: Category[] = [
   },
 ];
 
-const WRAPPER_TYPES: WrapperType[] = ["paper-wrap", "floral-frame", "fabric-ribbon", "template"];
+const WRAPPER_TYPES: WrapperType[] = ["pink-bouquet"];
 
 export default function AssetPicker({
   onSelect,
@@ -246,18 +260,19 @@ export default function AssetPicker({
               })
             : currentItems.map((item, i) => (
                 <motion.button
-                  key={`${activeCategory}-${item}-${i}`}
+                  key={`${activeCategory}-${item.type}-${i}`}
                   initial={false}
                   whileTap={{ scale: 0.85 }}
-                  onClick={() => onSelect(item)}
+                  onClick={() => onSelect(item.type)}
                   style={{
                     flexShrink: 0,
-                    width: 52,
-                    height: 52,
+                    width: 72,
+                    height: 64,
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 30,
+                    gap: 2,
                     borderRadius: 14,
                     border: "1px solid rgba(200, 180, 150, 0.25)",
                     background: "rgba(255, 255, 255, 0.55)",
@@ -276,7 +291,33 @@ export default function AssetPicker({
                     el.style.borderColor = "rgba(200, 180, 150, 0.25)";
                   }}
                 >
-                  {item}
+                  {isImageType(item.type) ? (
+                    <img
+                      src={item.type}
+                      alt={item.label}
+                      draggable={false}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        objectFit: "contain",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 28, lineHeight: 1 }}>{item.type}</span>
+                  )}
+                  <span
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 500,
+                      color: "#9c8b7a",
+                      letterSpacing: "0.02em",
+                      fontFamily:
+                        '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+                    }}
+                  >
+                    {item.label}
+                  </span>
                 </motion.button>
               ))}
         </div>

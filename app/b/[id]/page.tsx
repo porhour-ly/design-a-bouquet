@@ -168,7 +168,16 @@ export default function SharedBouquetPage() {
             userSelect: "none",
           }}
         >
-          {flower.type}
+          {flower.type.startsWith("/") ? (
+            <img
+              src={flower.type}
+              alt=""
+              draggable={false}
+              style={{ height: 250, width: "auto" }}
+            />
+          ) : (
+            flower.type
+          )}
         </div>
       ))}
 

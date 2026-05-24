@@ -222,7 +222,16 @@ export default function DraggableFlower({
       }}
       className="select-none"
     >
-      <span className="text-5xl block">{type}</span>
+      {type.startsWith("/") ? (
+        <img
+          src={type}
+          alt=""
+          draggable={false}
+          style={{ height: 250, width: "auto", pointerEvents: "none" }}
+        />
+      ) : (
+        <span className="text-5xl block">{type}</span>
+      )}
       {isSelected && (
         <motion.div
           ref={deleteRef}

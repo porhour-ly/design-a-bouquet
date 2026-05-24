@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 
-const VALID_WRAPPER_TYPES = ["paper-wrap", "floral-frame", "fabric-ribbon", "template"];
+const VALID_WRAPPER_TYPES = ["paper-wrap", "floral-frame", "fabric-ribbon", "template", "pink-bouquet"];
 
 export async function POST(request: Request) {
   let body: unknown;

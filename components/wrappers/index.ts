@@ -87,6 +87,31 @@ const template = createWrapper(
   160, 100, 100, 3,
 );
 
+// --- Aligned-layer wrappers (back and front both at y=0) ---
+
+const pinkBouquet: { assets: WrapperAssets; zone: BouquetZoneConfig } = (() => {
+  const scale = 0.2;
+  const w = Math.round(1920 * scale);
+  const backH = Math.round(1639 * scale);
+  const frontH = Math.round(2762 * scale);
+  const totalH = Math.max(backH, frontH);
+  const compH = Math.round(backH * 0.6);
+
+  return {
+    assets: {
+      back: { src: "/wrappers/pink bouquet 1/back.png", x: 0, y: 0, width: w, height: backH },
+      front: { src: "/wrappers/pink bouquet 1/front.png", x: 0, y: 0, width: w, height: frontH },
+    },
+    zone: {
+      width: w,
+      height: totalH,
+      compositionZone: { x: 0, y: 0, width: w, height: compH },
+      handleZone: { x: 0, y: compH, width: w, height: totalH - compH },
+      anchorPoint: { x: w / 2, y: Math.round(compH * 0.45) },
+    },
+  };
+})();
+
 // --- Registry ---
 
 export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
@@ -109,6 +134,11 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
     ...template,
     label: "Template",
     icon: "📐",
+  },
+  "pink-bouquet": {
+    ...pinkBouquet,
+    label: "Pink",
+    icon: "🌷",
   },
 };
 
