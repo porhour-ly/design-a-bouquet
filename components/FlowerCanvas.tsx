@@ -198,7 +198,8 @@ export default function FlowerCanvas() {
   );
 
   const handleCanvasPointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.target === e.currentTarget) {
+    const target = e.target as HTMLElement;
+    if (!target.closest("[data-flower]")) {
       setSelectedId(null);
     }
   }, []);

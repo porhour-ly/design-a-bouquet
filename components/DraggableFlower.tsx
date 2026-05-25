@@ -359,6 +359,7 @@ export default function DraggableFlower({
   return (
     <motion.div
       ref={ref}
+      data-flower
       style={{
         x: motionX,
         y: motionY,
@@ -370,6 +371,7 @@ export default function DraggableFlower({
         top: 0,
         touchAction: "none",
         cursor: "grab",
+        display: "inline-block",
       }}
       className="select-none"
     >
@@ -378,7 +380,7 @@ export default function DraggableFlower({
           src={type}
           alt=""
           draggable={false}
-          style={{ height: flowerImageHeight, width: "auto", pointerEvents: "none" }}
+          style={{ height: flowerImageHeight, width: "auto", display: "block", pointerEvents: "none" }}
         />
       ) : (
         <span className="text-5xl block">{type}</span>
