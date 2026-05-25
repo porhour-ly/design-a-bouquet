@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { WRAPPER_REGISTRY, SvgWrapper } from "@/components/wrappers";
 import type { WrapperType } from "@/components/wrappers/types";
-import { computeWrapperPosition, getViewportZone } from "@/components/bouquetConstraints";
+import { computeResponsiveWrapper, getViewportZone } from "@/components/bouquetConstraints";
 import { denormalizeFlowers } from "@/lib/bouquetData";
 import type { NormalizedFlower, Flower } from "@/lib/bouquetData";
 
@@ -14,6 +14,13 @@ export default function SharedBouquetPage() {
   const [wrapperType, setWrapperType] = useState<WrapperType>("paper-wrap");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Shared view reserves: no top bar, ~70px for "Make your own" button at bottom
+  const RESERVE_TOP = 16;
+  const RESERVE_BOTTOM = 70;
+
+  // Store normalized flowers for resize recomputation
+  const normalizedRef = useRef<NormalizedFlower[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -33,15 +40,18 @@ export default function SharedBouquetPage() {
         const wt = data.wrapper_type as WrapperType;
         setWrapperType(wt);
 
-        const { zone } = WRAPPER_REGISTRY[wt];
-        const wrapperPos = computeWrapperPosition(
+        normalizedRef.current = data.flowers as NormalizedFlower[];
+
+        const entry = WRAPPER_REGISTRY[wt];
+        const result = computeResponsiveWrapper(
+          entry,
           window.innerWidth,
           window.innerHeight,
-          zone.width,
-          zone.height,
+          RESERVE_TOP,
+          RESERVE_BOTTOM,
         );
-        const compositionZoneVP = getViewportZone(zone.compositionZone, wrapperPos);
-        const loaded = denormalizeFlowers(data.flowers as NormalizedFlower[], compositionZoneVP);
+        const compositionZoneVP = getViewportZone(result.zone.compositionZone, result.wrapperPos);
+        const loaded = denormalizeFlowers(normalizedRef.current, compositionZoneVP);
         setFlowers(loaded);
       } catch {
         if (!cancelled) setError("Bouquet not found");
@@ -56,30 +66,24 @@ export default function SharedBouquetPage() {
 
   // Recompute flower positions on resize
   useEffect(() => {
-    if (flowers.length === 0) return;
+    if (normalizedRef.current.length === 0) return;
 
     const handleResize = () => {
-      // Re-fetch to recompute positions for new viewport
-      fetch(`/api/bouquets/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          const wt = data.wrapper_type as WrapperType;
-          const { zone } = WRAPPER_REGISTRY[wt];
-          const wrapperPos = computeWrapperPosition(
-            window.innerWidth,
-            window.innerHeight,
-            zone.width,
-            zone.height,
-          );
-          const compositionZoneVP = getViewportZone(zone.compositionZone, wrapperPos);
-          setFlowers(denormalizeFlowers(data.flowers as NormalizedFlower[], compositionZoneVP));
-        })
-        .catch(() => {});
+      const entry = WRAPPER_REGISTRY[wrapperType];
+      const result = computeResponsiveWrapper(
+        entry,
+        window.innerWidth,
+        window.innerHeight,
+        RESERVE_TOP,
+        RESERVE_BOTTOM,
+      );
+      const compositionZoneVP = getViewportZone(result.zone.compositionZone, result.wrapperPos);
+      setFlowers(denormalizeFlowers(normalizedRef.current, compositionZoneVP));
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [id, flowers.length]);
+  }, [wrapperType]);
 
   if (loading) {
     return (
@@ -131,13 +135,20 @@ export default function SharedBouquetPage() {
     );
   }
 
-  const { zone, assets } = WRAPPER_REGISTRY[wrapperType];
-  const wrapperPos = computeWrapperPosition(
+  const entry = WRAPPER_REGISTRY[wrapperType];
+  const responsive = computeResponsiveWrapper(
+    entry,
     typeof window !== "undefined" ? window.innerWidth : 0,
     typeof window !== "undefined" ? window.innerHeight : 0,
-    zone.width,
-    zone.height,
+    RESERVE_TOP,
+    RESERVE_BOTTOM,
   );
+  const { zone, assets } = responsive;
+  const wrapperPos = responsive.wrapperPos;
+
+  // Flower image height scales proportionally with wrapper width
+  const FLOWER_HEIGHT_RATIO = 250 / 384;
+  const flowerImageHeight = Math.round(zone.width * FLOWER_HEIGHT_RATIO);
 
   return (
     <div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
@@ -173,7 +184,7 @@ export default function SharedBouquetPage() {
               src={flower.type}
               alt=""
               draggable={false}
-              style={{ height: 250, width: "auto" }}
+              style={{ height: flowerImageHeight, width: "auto" }}
             />
           ) : (
             flower.type

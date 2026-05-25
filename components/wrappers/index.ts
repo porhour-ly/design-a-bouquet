@@ -1,10 +1,23 @@
 import type { BouquetZoneConfig, WrapperAssets, WrapperType } from "./types";
 
+export interface WrapperNative {
+  width: number;
+  backHeight: number;
+  frontHeight: number;
+  compositionHeightRatio: number;
+  anchorYRatio: number;
+  /** true when back & front layers both start at y=0 (no overlap offset) */
+  aligned?: boolean;
+  backSrc: string;
+  frontSrc: string;
+}
+
 export interface WrapperEntry {
   assets: WrapperAssets;
   zone: BouquetZoneConfig;
   label: string;
   icon: string;
+  native?: WrapperNative;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,6 +152,16 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
     ...pinkBouquet,
     label: "Pink",
     icon: "🌷",
+    native: {
+      width: 1920,
+      backHeight: 1639,
+      frontHeight: 2762,
+      compositionHeightRatio: 0.6,
+      anchorYRatio: 0.45,
+      aligned: true,
+      backSrc: "/wrappers/pink bouquet 1/back.png",
+      frontSrc: "/wrappers/pink bouquet 1/front.png",
+    },
   },
 };
 
