@@ -11,7 +11,7 @@ import type { NormalizedFlower, Flower } from "@/lib/bouquetData";
 export default function SharedBouquetPage() {
   const { id } = useParams<{ id: string }>();
   const [flowers, setFlowers] = useState<Flower[]>([]);
-  const [wrapperType, setWrapperType] = useState<WrapperType>("paper-wrap");
+  const [wrapperType, setWrapperType] = useState<WrapperType>("pink");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

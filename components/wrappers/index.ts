@@ -21,99 +21,28 @@ export interface WrapperEntry {
 }
 
 // ---------------------------------------------------------------------------
-// Template convention (see public/wrappers/template-above.svg & template-below.svg)
-//
-// Both SVGs share the same native width. They compose as follows:
-//
-//   ┌─────────────────┐  ← back (below) at y=0
-//   │                 │
-//   │     below       │
-//   │        ┌────────┤──┐  ← front (above) at y = backH × 0.5
-//   │        │overlap │  │
-//   └────────┤────────┘  │
-//            │  above    │
-//            └───────────┘
-//
-// - back sits at y=0
-// - front is offset down by 50% of the back's rendered height
-// - total height = max(backH, frontY + frontH)
-// - composition zone: upper 50% of total (where flowers live)
-// - handle zone: lower 50% of total (no flowers)
-//
-// To add a new wrapper: provide two SVGs following this layout, then call
-// createWrapper() with the SVG paths, native dimensions, and scale.
+// Helper for aligned wrappers (back and front both start at y=0).
+// Computes static fallback assets/zone at a fixed scale of 0.2.
 // ---------------------------------------------------------------------------
 
-function createWrapper(
-  backSvg: string,
-  frontSvg: string,
+function createAlignedWrapper(
+  backSrc: string,
+  frontSrc: string,
   nativeWidth: number,
   nativeBackHeight: number,
   nativeFrontHeight: number,
-  scale: number,
 ): { assets: WrapperAssets; zone: BouquetZoneConfig } {
+  const scale = 0.2;
   const w = Math.round(nativeWidth * scale);
   const backH = Math.round(nativeBackHeight * scale);
   const frontH = Math.round(nativeFrontHeight * scale);
-  const frontY = Math.round(backH * 0.5);
-  const totalH = Math.max(backH, frontY + frontH);
-  const compH = Math.round(totalH * 0.5);
-
-  return {
-    assets: {
-      back: { src: backSvg, x: 0, y: 0, width: w, height: backH },
-      front: { src: frontSvg, x: 0, y: frontY, width: w, height: frontH },
-    },
-    zone: {
-      width: w,
-      height: totalH,
-      compositionZone: { x: 0, y: 0, width: w, height: compH },
-      handleZone: { x: 0, y: compH, width: w, height: totalH - compH },
-      anchorPoint: { x: w / 2, y: Math.round(compH * 0.5) },
-    },
-  };
-}
-
-// --- Wrapper definitions ---
-
-const paperWrap = createWrapper(
-  "/wrappers/paper-wrap-back.svg",
-  "/wrappers/paper-wrap-front.svg",
-  181, 149, 162, 2.5,
-);
-
-const floralFrame = createWrapper(
-  "/wrappers/floral-frame-back.svg",
-  "/wrappers/floral-frame-front.svg",
-  320, 520, 520, 1,
-);
-
-const fabricRibbon = createWrapper(
-  "/wrappers/fabric-ribbon-back.svg",
-  "/wrappers/fabric-ribbon-front.svg",
-  340, 560, 560, 1,
-);
-
-const template = createWrapper(
-  "/wrappers/template-below.svg",
-  "/wrappers/template-above.svg",
-  160, 100, 100, 3,
-);
-
-// --- Aligned-layer wrappers (back and front both at y=0) ---
-
-const pinkBouquet: { assets: WrapperAssets; zone: BouquetZoneConfig } = (() => {
-  const scale = 0.2;
-  const w = Math.round(1920 * scale);
-  const backH = Math.round(1639 * scale);
-  const frontH = Math.round(2762 * scale);
   const totalH = Math.max(backH, frontH);
   const compH = Math.round(backH * 0.6);
 
   return {
     assets: {
-      back: { src: "/wrappers/pink bouquet 1/back.png", x: 0, y: 0, width: w, height: backH },
-      front: { src: "/wrappers/pink bouquet 1/front.png", x: 0, y: 0, width: w, height: frontH },
+      back: { src: backSrc, x: 0, y: 0, width: w, height: backH },
+      front: { src: frontSrc, x: 0, y: 0, width: w, height: frontH },
     },
     zone: {
       width: w,
@@ -123,35 +52,15 @@ const pinkBouquet: { assets: WrapperAssets; zone: BouquetZoneConfig } = (() => {
       anchorPoint: { x: w / 2, y: Math.round(compH * 0.45) },
     },
   };
-})();
+}
 
 // --- Registry ---
 
 export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
-  "paper-wrap": {
-    ...paperWrap,
-    label: "Paper",
-    icon: "📜",
-  },
-  "floral-frame": {
-    ...floralFrame,
-    label: "Frame",
-    icon: "🌿",
-  },
-  "fabric-ribbon": {
-    ...fabricRibbon,
-    label: "Fabric",
-    icon: "🎀",
-  },
-  "template": {
-    ...template,
-    label: "Template",
-    icon: "📐",
-  },
-  "pink-bouquet": {
-    ...pinkBouquet,
+  "pink": {
+    ...createAlignedWrapper("/wrappers/pink/back.png", "/wrappers/pink/front.png", 1920, 1639, 2762),
     label: "Pink",
-    icon: "🌷",
+    icon: "/wrappers/pink/icon.png",
     native: {
       width: 1920,
       backHeight: 1639,
@@ -159,8 +68,68 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
       compositionHeightRatio: 0.6,
       anchorYRatio: 0.45,
       aligned: true,
-      backSrc: "/wrappers/pink bouquet 1/back.png",
-      frontSrc: "/wrappers/pink bouquet 1/front.png",
+      backSrc: "/wrappers/pink/back.png",
+      frontSrc: "/wrappers/pink/front.png",
+    },
+  },
+  "blue": {
+    ...createAlignedWrapper("/wrappers/blue/back.png", "/wrappers/blue/front.png", 1920, 1700, 2762),
+    label: "Blue",
+    icon: "/wrappers/blue/icon.png",
+    native: {
+      width: 1920,
+      backHeight: 1700,
+      frontHeight: 2762,
+      compositionHeightRatio: 0.6,
+      anchorYRatio: 0.45,
+      aligned: true,
+      backSrc: "/wrappers/blue/back.png",
+      frontSrc: "/wrappers/blue/front.png",
+    },
+  },
+  "red": {
+    ...createAlignedWrapper("/wrappers/red/back.png", "/wrappers/red/front.png", 1920, 1756, 2560),
+    label: "Red",
+    icon: "/wrappers/red/icon.png",
+    native: {
+      width: 1920,
+      backHeight: 1756,
+      frontHeight: 2560,
+      compositionHeightRatio: 0.6,
+      anchorYRatio: 0.45,
+      aligned: true,
+      backSrc: "/wrappers/red/back.png",
+      frontSrc: "/wrappers/red/front.png",
+    },
+  },
+  "purple": {
+    ...createAlignedWrapper("/wrappers/purple/back.png", "/wrappers/purple/front.png", 1182, 1412, 2560),
+    label: "Purple",
+    icon: "/wrappers/purple/icon.png",
+    native: {
+      width: 1182,
+      backHeight: 1412,
+      frontHeight: 2560,
+      compositionHeightRatio: 0.6,
+      anchorYRatio: 0.45,
+      aligned: true,
+      backSrc: "/wrappers/purple/back.png",
+      frontSrc: "/wrappers/purple/front.png",
+    },
+  },
+  "foral": {
+    ...createAlignedWrapper("/wrappers/foral/back.png", "/wrappers/foral/front.png", 1182, 1460, 2288),
+    label: "Floral",
+    icon: "/wrappers/foral/icon.png",
+    native: {
+      width: 1182,
+      backHeight: 1460,
+      frontHeight: 2288,
+      compositionHeightRatio: 0.6,
+      anchorYRatio: 0.45,
+      aligned: true,
+      backSrc: "/wrappers/foral/back.png",
+      frontSrc: "/wrappers/foral/front.png",
     },
   },
 };

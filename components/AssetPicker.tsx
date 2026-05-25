@@ -29,38 +29,48 @@ function isImageType(type: string) {
 
 const CATEGORIES: Category[] = [
   {
+    id: "wrapper",
+    label: "Wrappers",
+    icon: "",
+    items: [],
+  },
+  {
     id: "flowers",
     label: "Flowers",
-    icon: "🌸",
+    icon: "",
     items: [
       { type: "/flowers/rose.png", label: "Rose" },
+      { type: "/flowers/rose 2.png", label: "Rose 2" },
+      { type: "/flowers/rose 3.png", label: "Rose 3" },
       { type: "/flowers/dahlia.png", label: "Dahlia" },
+      { type: "/flowers/Tulip.png", label: "Tulip" },
+      { type: "/flowers/hydrangea.png", label: "Hydrangea" },
+      { type: "/flowers/lilac.png", label: "Lilac" },
+      { type: "/flowers/lily.png", label: "Lily" },
+      { type: "/flowers/sunflower.png", label: "Sunflower" },
+      { type: "/flowers/sweat pea.png", label: "Sweet Pea" },
     ],
   },
   {
     id: "greenery",
-    label: "Greenery",
-    icon: "🌿",
+    label: "Greeneries",
+    icon: "",
     items: [
       { type: "/greenerys/euclayptus.png", label: "Eucalyptus" },
+      { type: "/greenerys/cedar.png", label: "Cedar" },
+      { type: "/greenerys/dill.png", label: "Dill" },
     ],
-  },
-  {
-    id: "wrapper",
-    label: "Wrapper",
-    icon: "🎀",
-    items: [],
   },
 ];
 
-const WRAPPER_TYPES: WrapperType[] = ["pink-bouquet"];
+const WRAPPER_TYPES: WrapperType[] = ["pink", "blue", "red", "purple", "foral"];
 
 export default function AssetPicker({
   onSelect,
   onWrapperSelect,
   activeWrapper,
 }: AssetPickerProps) {
-  const [activeCategory, setActiveCategory] = useState("flowers");
+  const [activeCategory, setActiveCategory] = useState("wrapper");
   const scrollRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
@@ -168,7 +178,7 @@ export default function AssetPicker({
                   WebkitTapHighlightColor: "transparent",
                 }}
               >
-                <span style={{ fontSize: 15 }}>{cat.icon}</span>
+                {cat.icon && <span style={{ fontSize: 15 }}>{cat.icon}</span>}
                 <span
                   style={{
                     fontSize: 12,
@@ -242,7 +252,17 @@ export default function AssetPicker({
                       transition: "background 0.15s, border-color 0.15s",
                     }}
                   >
-                    <span>{entry.icon}</span>
+                    <img
+                      src={entry.icon}
+                      alt={entry.label}
+                      draggable={false}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        objectFit: "contain",
+                        pointerEvents: "none",
+                      }}
+                    />
                     <span
                       style={{
                         fontSize: 9,

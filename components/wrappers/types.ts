@@ -35,4 +35,4 @@ export interface WrapperAssets {
   front: WrapperLayer;
 }
 
-export type WrapperType = "paper-wrap" | "floral-frame" | "fabric-ribbon" | "template" | "pink-bouquet";
+export type WrapperType = "pink" | "blue" | "red" | "purple" | "foral";
