@@ -8,11 +8,12 @@ import SaveButton from "./SaveButton";
 import { WRAPPER_REGISTRY, SvgWrapper } from "./wrappers";
 import type { WrapperType, Rect } from "./wrappers";
 import {
-  computeWrapperPosition,
+  computeResponsiveWrapper,
   getViewportZone,
   getSpawnPosition,
   clampToRect,
 } from "./bouquetConstraints";
+import type { ResponsiveWrapperResult } from "./bouquetConstraints";
 import type { Flower } from "@/lib/bouquetData";
 
 const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
@@ -23,7 +24,6 @@ export default function FlowerCanvas() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeWrapper, setActiveWrapper] = useState<WrapperType>("pink-bouquet");
-  const [wrapperPos, setWrapperPos] = useState({ x: 0, y: 0 });
   const nextZIndex = useRef(1);
   const canvasRef = useRef<HTMLDivElement>(null!);
   const activeFlowerId = useRef<string | null>(null);
@@ -40,26 +40,36 @@ export default function FlowerCanvas() {
     >()
   );
 
-  const { zone, assets } = WRAPPER_REGISTRY[activeWrapper];
+  // Reserve space: ~50px top (save button), ~160px bottom (picker + safe area)
+  const RESERVE_TOP = 50;
+  const RESERVE_BOTTOM = 160;
 
-  // Compute wrapper position on mount and resize
+  const [responsive, setResponsive] = useState<ResponsiveWrapperResult>(() => {
+    const entry = WRAPPER_REGISTRY[activeWrapper];
+    return computeResponsiveWrapper(entry, 0, 0, RESERVE_TOP, RESERVE_BOTTOM);
+  });
+  const { zone, assets } = responsive;
+  const wrapperPos = responsive.wrapperPos;
+
+  // Compute responsive wrapper on mount and resize
   useEffect(() => {
     const update = () => {
-      const pos = computeWrapperPosition(
-        window.innerWidth,
-        window.innerHeight,
-        zone.width,
-        zone.height
+      const entry = WRAPPER_REGISTRY[activeWrapper];
+      setResponsive(
+        computeResponsiveWrapper(entry, window.innerWidth, window.innerHeight, RESERVE_TOP, RESERVE_BOTTOM)
       );
-      setWrapperPos(pos);
     };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [zone.width, zone.height]);
+  }, [activeWrapper]);
 
   // Compute the composition zone in viewport coordinates
   const compositionZoneVP: Rect = getViewportZone(zone.compositionZone, wrapperPos);
+
+  // Flower image height scales proportionally with wrapper width
+  const FLOWER_HEIGHT_RATIO = 250 / 384;
+  const flowerImageHeight = Math.round(zone.width * FLOWER_HEIGHT_RATIO);
 
   const registerTransformHandler = useCallback(
     (
@@ -133,11 +143,59 @@ export default function FlowerCanvas() {
   const handleDragStart = useCallback((id: string) => {
     activeFlowerId.current = id;
     setSelectedId(id);
-    const z = nextZIndex.current++;
-    setFlowers((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, zIndex: z } : f))
-    );
   }, []);
+
+  const handleLayerChange = useCallback(
+    (id: string, action: "front" | "back" | "forward" | "backward") => {
+      setFlowers((prev) => {
+        const target = prev.find((f) => f.id === id);
+        if (!target) return prev;
+
+        if (action === "front") {
+          const z = nextZIndex.current++;
+          return prev.map((f) => (f.id === id ? { ...f, zIndex: z } : f));
+        }
+
+        if (action === "back") {
+          const minZ = Math.min(...prev.map((f) => f.zIndex));
+          if (target.zIndex === minZ) return prev; // already at back
+          return prev.map((f) =>
+            f.id === id ? { ...f, zIndex: minZ - 1 } : f
+          );
+        }
+
+        if (action === "forward") {
+          // Find flower with smallest zIndex that is still > target's zIndex
+          const above = prev
+            .filter((f) => f.zIndex > target.zIndex)
+            .sort((a, b) => a.zIndex - b.zIndex);
+          if (above.length === 0) return prev; // already at front
+          const swap = above[0];
+          return prev.map((f) => {
+            if (f.id === id) return { ...f, zIndex: swap.zIndex };
+            if (f.id === swap.id) return { ...f, zIndex: target.zIndex };
+            return f;
+          });
+        }
+
+        // backward
+        const below = prev
+          .filter((f) => f.zIndex < target.zIndex)
+          .sort((a, b) => b.zIndex - a.zIndex);
+        if (below.length === 0) return prev; // already at back
+        const swap = below[0];
+        return prev.map((f) => {
+          if (f.id === id) return { ...f, zIndex: swap.zIndex };
+          if (f.id === swap.id) return { ...f, zIndex: target.zIndex };
+          return f;
+        });
+      });
+      // Deselect so the +1000000 visual z-index boost drops and the
+      // new layer position is immediately visible
+      setSelectedId(null);
+    },
+    []
+  );
 
   const handleCanvasPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.target === e.currentTarget) {
@@ -149,15 +207,16 @@ export default function FlowerCanvas() {
     (type: WrapperType) => {
       setActiveWrapper(type);
       // Re-clamp flowers to new composition zone
-      const newZone = WRAPPER_REGISTRY[type].zone;
-      const newPos = computeWrapperPosition(
+      const entry = WRAPPER_REGISTRY[type];
+      const result = computeResponsiveWrapper(
+        entry,
         window.innerWidth,
         window.innerHeight,
-        newZone.width,
-        newZone.height
+        RESERVE_TOP,
+        RESERVE_BOTTOM,
       );
-      setWrapperPos(newPos);
-      const newCompZone = getViewportZone(newZone.compositionZone, newPos);
+      setResponsive(result);
+      const newCompZone = getViewportZone(result.zone.compositionZone, result.wrapperPos);
       setFlowers((prev) =>
         prev.map((f) => {
           const clamped = clampToRect(f.x, f.y, newCompZone);
@@ -242,10 +301,12 @@ export default function FlowerCanvas() {
             {...flower}
             isSelected={flower.id === selectedId}
             compositionZone={compositionZoneVP}
+            flowerImageHeight={flowerImageHeight}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
             onRotateEnd={handleRotateEnd}
             onDelete={handleDelete}
+            onLayerChange={handleLayerChange}
             registerTransformHandler={registerTransformHandler}
           />
         ))}
