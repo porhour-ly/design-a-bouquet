@@ -43,16 +43,24 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data, error } = await getSupabase()
-    .from("bouquets")
-    .insert({ wrapper_type, flowers })
-    .select("id")
-    .single();
+  try {
+    const { data, error } = await getSupabase()
+      .from("bouquets")
+      .insert({ wrapper_type, flowers })
+      .select("id")
+      .single();
 
-  if (error) {
-    console.error("Supabase insert error:", error);
-    return NextResponse.json({ error: "Failed to save bouquet" }, { status: 500 });
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return NextResponse.json({ error: "Failed to save bouquet", details: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ id: data.id });
+  } catch (err) {
+    console.error("API route error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Internal server error" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({ id: data.id });
 }

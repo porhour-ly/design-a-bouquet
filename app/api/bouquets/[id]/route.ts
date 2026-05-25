@@ -13,15 +13,23 @@ export async function GET(
     return NextResponse.json({ error: "Invalid bouquet ID" }, { status: 400 });
   }
 
-  const { data, error } = await getSupabase()
-    .from("bouquets")
-    .select("id, wrapper_type, flowers, created_at")
-    .eq("id", id)
-    .single();
+  try {
+    const { data, error } = await getSupabase()
+      .from("bouquets")
+      .select("id, wrapper_type, flowers, created_at")
+      .eq("id", id)
+      .single();
 
-  if (error || !data) {
-    return NextResponse.json({ error: "Bouquet not found" }, { status: 404 });
+    if (error || !data) {
+      return NextResponse.json({ error: "Bouquet not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error("API route error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Internal server error" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json(data);
 }
