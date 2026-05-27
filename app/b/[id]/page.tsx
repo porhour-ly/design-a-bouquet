@@ -141,12 +141,19 @@ export default function SharedBouquetPage() {
           position: "absolute",
           left: offsetX,
           top: offsetY,
-          width: nativeW,
-          height: nativeTotalH,
-          transform: `scale(${fitScale})`,
-          transformOrigin: "top left",
+          width: nativeW * fitScale,
+          height: nativeTotalH * fitScale,
+          overflow: "visible",
         }}
       >
+        <div
+          style={{
+            width: nativeW,
+            height: nativeTotalH,
+            transform: `scale(${fitScale})`,
+            transformOrigin: "top left",
+          }}
+        >
         {/* Wrapper back layer */}
         <div
           style={{
@@ -167,7 +174,7 @@ export default function SharedBouquetPage() {
               position: "absolute",
               left: nf.nx * nativeW,
               top: nf.ny * nativeCompH,
-              transform: `translate(-50%, -50%) scale(${nf.scale}) rotate(${nf.rotation}deg)`,
+              transform: `scale(${nf.scale}) rotate(${nf.rotation}deg)`,
               fontSize: 48,
               zIndex: nf.zIndex,
               pointerEvents: "none",
@@ -198,6 +205,7 @@ export default function SharedBouquetPage() {
           }}
         >
           <SvgWrapper src={nat.frontSrc} width={nativeW} height={nativeFrontH} />
+        </div>
         </div>
       </div>
 
