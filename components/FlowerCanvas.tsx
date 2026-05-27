@@ -159,8 +159,17 @@ export default function FlowerCanvas() {
         if (action === "back") {
           const minZ = Math.min(...prev.map((f) => f.zIndex));
           if (target.zIndex === minZ) return prev; // already at back
+          // Keep z-index >= 1 so flowers stay above the back wrapper (z-index 0)
+          const newZ = Math.max(minZ - 1, 1);
+          if (newZ === minZ) {
+            // Can't go lower without hitting the wrapper; shift others up instead
+            nextZIndex.current++;
+            return prev.map((f) =>
+              f.id === id ? { ...f, zIndex: 1 } : { ...f, zIndex: f.zIndex + 1 }
+            );
+          }
           return prev.map((f) =>
-            f.id === id ? { ...f, zIndex: minZ - 1 } : f
+            f.id === id ? { ...f, zIndex: newZ } : f
           );
         }
 
