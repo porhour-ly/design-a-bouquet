@@ -1,26 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { WRAPPER_REGISTRY, SvgWrapper } from "@/components/wrappers";
 import type { WrapperType } from "@/components/wrappers/types";
-import { computeResponsiveWrapper, getViewportZone } from "@/components/bouquetConstraints";
-import { denormalizeFlowers } from "@/lib/bouquetData";
-import type { NormalizedFlower, Flower } from "@/lib/bouquetData";
+import type { NormalizedFlower } from "@/lib/bouquetData";
 
 export default function SharedBouquetPage() {
   const { id } = useParams<{ id: string }>();
-  const [flowers, setFlowers] = useState<Flower[]>([]);
+  const [normalizedFlowers, setNormalizedFlowers] = useState<NormalizedFlower[]>([]);
   const [wrapperType, setWrapperType] = useState<WrapperType>("pink");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [vpSize, setVpSize] = useState<{ w: number; h: number } | null>(null);
 
   // Shared view reserves: no top bar, ~70px for "Make your own" button at bottom
   const RESERVE_TOP = 16;
   const RESERVE_BOTTOM = 70;
 
-  // Store normalized flowers for resize recomputation
-  const normalizedRef = useRef<NormalizedFlower[]>([]);
+  // Track viewport size for computing fitScale
+  useEffect(() => {
+    setVpSize({ w: window.innerWidth, h: window.innerHeight });
+    const onResize = () => setVpSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -37,22 +41,8 @@ export default function SharedBouquetPage() {
 
         if (cancelled) return;
 
-        const wt = data.wrapper_type as WrapperType;
-        setWrapperType(wt);
-
-        normalizedRef.current = data.flowers as NormalizedFlower[];
-
-        const entry = WRAPPER_REGISTRY[wt];
-        const result = computeResponsiveWrapper(
-          entry,
-          window.innerWidth,
-          window.innerHeight,
-          RESERVE_TOP,
-          RESERVE_BOTTOM,
-        );
-        const compositionZoneVP = getViewportZone(result.zone.compositionZone, result.wrapperPos);
-        const loaded = denormalizeFlowers(normalizedRef.current, compositionZoneVP);
-        setFlowers(loaded);
+        setWrapperType(data.wrapper_type as WrapperType);
+        setNormalizedFlowers(data.flowers as NormalizedFlower[]);
       } catch {
         if (!cancelled) setError("Bouquet not found");
       } finally {
@@ -64,28 +54,7 @@ export default function SharedBouquetPage() {
     return () => { cancelled = true; };
   }, [id]);
 
-  // Recompute flower positions on resize
-  useEffect(() => {
-    if (normalizedRef.current.length === 0) return;
-
-    const handleResize = () => {
-      const entry = WRAPPER_REGISTRY[wrapperType];
-      const result = computeResponsiveWrapper(
-        entry,
-        window.innerWidth,
-        window.innerHeight,
-        RESERVE_TOP,
-        RESERVE_BOTTOM,
-      );
-      const compositionZoneVP = getViewportZone(result.zone.compositionZone, result.wrapperPos);
-      setFlowers(denormalizeFlowers(normalizedRef.current, compositionZoneVP));
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [wrapperType]);
-
-  if (loading) {
+  if (loading || !vpSize) {
     return (
       <div
         style={{
@@ -135,77 +104,104 @@ export default function SharedBouquetPage() {
     );
   }
 
+  // --- Compute native-coordinate layout ---
   const entry = WRAPPER_REGISTRY[wrapperType];
-  const responsive = computeResponsiveWrapper(
-    entry,
-    typeof window !== "undefined" ? window.innerWidth : 0,
-    typeof window !== "undefined" ? window.innerHeight : 0,
-    RESERVE_TOP,
-    RESERVE_BOTTOM,
-  );
-  const { zone, assets } = responsive;
-  const wrapperPos = responsive.wrapperPos;
+  const nat = entry.native!;
 
-  // Flower image height scales proportionally with wrapper width
+  const nativeW = nat.width;
+  const nativeBackH = nat.backHeight;
+  const nativeFrontH = nat.frontHeight;
+
+  // All current wrappers are aligned (front & back start at y=0)
+  const nativeTotalH = Math.max(nativeBackH, nativeFrontH);
+
+  // Composition zone at native scale
+  const nativeCompH = Math.round(nativeBackH * nat.compositionHeightRatio);
+
+  // Flower image height at native scale
   const FLOWER_HEIGHT_RATIO = 250 / 384;
-  const flowerImageHeight = Math.round(zone.width * FLOWER_HEIGHT_RATIO);
+  const flowerImageHeight = Math.round(nativeW * FLOWER_HEIGHT_RATIO);
+
+  // --- Scale the whole container to fit the viewport ---
+  const availW = vpSize.w;
+  const availH = vpSize.h - RESERVE_TOP - RESERVE_BOTTOM;
+  const fitScale = Math.min(availW / nativeW, availH / nativeTotalH);
+
+  // Centering offsets
+  const scaledW = nativeW * fitScale;
+  const scaledH = nativeTotalH * fitScale;
+  const offsetX = (vpSize.w - scaledW) / 2;
+  const offsetY = RESERVE_TOP + (availH - scaledH) / 2;
 
   return (
     <div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
-      {/* Wrapper back layer */}
+      {/* Scaled bouquet container — everything inside uses native coordinates */}
       <div
         style={{
           position: "absolute",
-          left: wrapperPos.x + assets.back.x,
-          top: wrapperPos.y + assets.back.y,
-          zIndex: 0,
+          left: offsetX,
+          top: offsetY,
+          width: nativeW,
+          height: nativeTotalH,
+          transform: `scale(${fitScale})`,
+          transformOrigin: "top left",
         }}
       >
-        <SvgWrapper src={assets.back.src} width={assets.back.width} height={assets.back.height} />
-      </div>
-
-      {/* Static flowers */}
-      {flowers.map((flower) => (
+        {/* Wrapper back layer */}
         <div
-          key={flower.id}
           style={{
             position: "absolute",
-            left: flower.x,
-            top: flower.y,
-            transform: `translate(-50%, -50%) scale(${flower.scale}) rotate(${flower.rotation}deg)`,
-            fontSize: 48,
-            zIndex: flower.zIndex,
-            pointerEvents: "none",
-            userSelect: "none",
+            left: 0,
+            top: 0,
+            zIndex: 0,
           }}
         >
-          {flower.type.startsWith("/") ? (
-            <img
-              src={flower.type}
-              alt=""
-              draggable={false}
-              style={{ height: flowerImageHeight, width: "auto" }}
-            />
-          ) : (
-            flower.type
-          )}
+          <SvgWrapper src={nat.backSrc} width={nativeW} height={nativeBackH} />
         </div>
-      ))}
 
-      {/* Wrapper front layer */}
-      <div
-        style={{
-          position: "absolute",
-          left: wrapperPos.x + assets.front.x,
-          top: wrapperPos.y + assets.front.y,
-          zIndex: 999999,
-          pointerEvents: "none",
-        }}
-      >
-        <SvgWrapper src={assets.front.src} width={assets.front.width} height={assets.front.height} />
+        {/* Flowers at native coordinates */}
+        {normalizedFlowers.map((nf, i) => (
+          <div
+            key={`flower-${i}`}
+            style={{
+              position: "absolute",
+              left: nf.nx * nativeW,
+              top: nf.ny * nativeCompH,
+              transform: `translate(-50%, -50%) scale(${nf.scale}) rotate(${nf.rotation}deg)`,
+              fontSize: 48,
+              zIndex: nf.zIndex,
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          >
+            {nf.type.startsWith("/") ? (
+              <img
+                src={nf.type}
+                alt=""
+                draggable={false}
+                style={{ height: flowerImageHeight, width: "auto" }}
+              />
+            ) : (
+              nf.type
+            )}
+          </div>
+        ))}
+
+        {/* Wrapper front layer */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            zIndex: 999999,
+            pointerEvents: "none",
+          }}
+        >
+          <SvgWrapper src={nat.frontSrc} width={nativeW} height={nativeFrontH} />
+        </div>
       </div>
 
-      {/* Make your own button */}
+      {/* Make your own button — outside the scaled container */}
       <a
         href="/"
         style={{
