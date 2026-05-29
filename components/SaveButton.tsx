@@ -5,24 +5,28 @@ import type { Rect } from "./wrappers/types";
 import type { WrapperType } from "./wrappers/types";
 import type { Flower } from "@/lib/bouquetData";
 import { normalizeFlowers } from "@/lib/bouquetData";
+import NoteCardModal from "./NoteCardModal";
 
 interface SaveButtonProps {
   flowers: Flower[];
   activeWrapper: WrapperType;
   compositionZoneVP: Rect;
+  hasNoteCard: boolean;
 }
 
 export default function SaveButton({
   flowers,
   activeWrapper,
   compositionZoneVP,
+  hasNoteCard,
 }: SaveButtonProps) {
   const [saving, setSaving] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showNoteModal, setShowNoteModal] = useState(false);
 
-  const handleSave = useCallback(async () => {
+  const performSave = useCallback(async (note: string | null) => {
     if (saving || flowers.length === 0) return;
 
     setSaving(true);
@@ -37,6 +41,7 @@ export default function SaveButton({
         body: JSON.stringify({
           wrapper_type: activeWrapper,
           flowers: normalized,
+          ...(note ? { note } : {}),
         }),
       });
 
@@ -54,6 +59,15 @@ export default function SaveButton({
       setSaving(false);
     }
   }, [saving, flowers, compositionZoneVP, activeWrapper]);
+
+  const handleSave = useCallback(() => {
+    if (saving || flowers.length === 0) return;
+    if (hasNoteCard) {
+      setShowNoteModal(true);
+    } else {
+      performSave(null);
+    }
+  }, [saving, flowers, hasNoteCard, performSave]);
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) return;
@@ -84,6 +98,15 @@ export default function SaveButton({
 
   return (
     <>
+      {/* Note-writing modal */}
+      <NoteCardModal
+        open={showNoteModal}
+        onAttach={(note) => {
+          setShowNoteModal(false);
+          performSave(note);
+        }}
+      />
+
       {/* Save button */}
       <button
         onClick={handleSave}

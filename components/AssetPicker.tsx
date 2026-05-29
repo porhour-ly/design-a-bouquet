@@ -61,6 +61,16 @@ const CATEGORIES: Category[] = [
       { type: "/greenerys/dill.png", label: "Dill" },
     ],
   },
+  {
+    id: "notes",
+    label: "Notes",
+    icon: "",
+    items: [
+      { type: "/notes/plain.png", label: "Plain" },
+      { type: "/notes/pattern.png", label: "Pattern" },
+      { type: "/notes/purple.png", label: "Purple" },
+    ],
+  },
 ];
 
 const WRAPPER_TYPES: WrapperType[] = ["pink", "blue", "red", "purple", "foral"];

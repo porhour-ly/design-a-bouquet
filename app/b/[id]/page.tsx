@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { WRAPPER_REGISTRY, SvgWrapper } from "@/components/wrappers";
 import type { WrapperType } from "@/components/wrappers/types";
 import type { NormalizedFlower } from "@/lib/bouquetData";
+import NoteCard from "@/components/NoteCard";
 
 export default function SharedBouquetPage() {
   const { id } = useParams<{ id: string }>();
   const [normalizedFlowers, setNormalizedFlowers] = useState<NormalizedFlower[]>([]);
   const [wrapperType, setWrapperType] = useState<WrapperType>("pink");
+  const [note, setNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vpSize, setVpSize] = useState<{ w: number; h: number } | null>(null);
@@ -43,6 +45,7 @@ export default function SharedBouquetPage() {
 
         setWrapperType(data.wrapper_type as WrapperType);
         setNormalizedFlowers(data.flowers as NormalizedFlower[]);
+        if (data.note) setNote(data.note as string);
       } catch {
         if (!cancelled) setError("Bouquet not found");
       } finally {
@@ -167,32 +170,49 @@ export default function SharedBouquetPage() {
         </div>
 
         {/* Flowers at native coordinates */}
-        {normalizedFlowers.map((nf, i) => (
-          <div
-            key={`flower-${i}`}
-            style={{
-              position: "absolute",
-              left: nf.nx * nativeW,
-              top: nf.ny * nativeCompH,
-              transform: `scale(${nf.scale}) rotate(${nf.rotation}deg)`,
-              fontSize: 48,
-              zIndex: nf.zIndex,
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          >
-            {nf.type.startsWith("/") ? (
-              <img
-                src={nf.type}
-                alt=""
-                draggable={false}
-                style={{ height: flowerImageHeight, width: "auto" }}
+        {normalizedFlowers.map((nf, i) => {
+          const isNote = nf.type.startsWith("/notes/");
+          const itemStyle: React.CSSProperties = {
+            position: "absolute",
+            left: nf.nx * nativeW,
+            top: nf.ny * nativeCompH,
+            transform: `scale(${nf.scale}) rotate(${nf.rotation}deg)`,
+            fontSize: 48,
+            zIndex: nf.zIndex,
+            pointerEvents: isNote ? "auto" : "none",
+            userSelect: "none",
+          };
+
+          if (isNote) {
+            return (
+              <NoteCard
+                key={`flower-${i}`}
+                note={note || "Thinking of you"}
+                type={nf.type}
+                style={itemStyle}
+                flowerImageHeight={flowerImageHeight}
               />
-            ) : (
-              nf.type
-            )}
-          </div>
-        ))}
+            );
+          }
+
+          return (
+            <div
+              key={`flower-${i}`}
+              style={itemStyle}
+            >
+              {nf.type.startsWith("/") ? (
+                <img
+                  src={nf.type}
+                  alt=""
+                  draggable={false}
+                  style={{ height: flowerImageHeight, width: "auto" }}
+                />
+              ) : (
+                nf.type
+              )}
+            </div>
+          );
+        })}
 
         {/* Wrapper front layer */}
         <div

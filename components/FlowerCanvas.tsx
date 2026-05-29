@@ -20,6 +20,10 @@ const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
   ssr: false,
 });
 
+function isNoteCard(type: string) {
+  return type.startsWith("/notes/");
+}
+
 export default function FlowerCanvas() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -89,8 +93,16 @@ export default function FlowerCanvas() {
     []
   );
 
+  const hasNoteCard = flowers.some((f) => isNoteCard(f.type));
+
   const addFlower = useCallback(
     (type: string) => {
+      // Only allow one note card at a time
+      if (isNoteCard(type)) {
+        const alreadyHasNote = flowers.some((f) => isNoteCard(f.type));
+        if (alreadyHasNote) return;
+      }
+
       const id =
         Math.random().toString(36).slice(2) + Date.now().toString(36);
       const spawnPos = getSpawnPosition(zone, wrapperPos);
@@ -110,7 +122,7 @@ export default function FlowerCanvas() {
       activeFlowerId.current = id;
       setSelectedId(id);
     },
-    [zone, wrapperPos]
+    [zone, wrapperPos, flowers]
   );
 
   const handleDragEnd = useCallback((id: string, x: number, y: number) => {
@@ -338,6 +350,7 @@ export default function FlowerCanvas() {
         flowers={flowers}
         activeWrapper={activeWrapper}
         compositionZoneVP={compositionZoneVP}
+        hasNoteCard={hasNoteCard}
       />
       <AssetPicker
         onSelect={addFlower}

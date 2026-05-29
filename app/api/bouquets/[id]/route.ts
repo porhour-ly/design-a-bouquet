@@ -16,7 +16,7 @@ export async function GET(
   try {
     const { data, error } = await getSupabase()
       .from("bouquets")
-      .select("id, wrapper_type, flowers, created_at")
+      .select("id, wrapper_type, flowers, created_at, note")
       .eq("id", id)
       .single();
 

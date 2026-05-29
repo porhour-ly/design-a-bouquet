@@ -14,6 +14,7 @@ export interface SavedBouquet {
   wrapper_type: string;
   flowers: NormalizedFlower[];
   created_at: string;
+  note?: string | null;
 }
 
 export interface Flower {

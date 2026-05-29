@@ -11,9 +11,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { wrapper_type, flowers } = body as {
+  const { wrapper_type, flowers, note } = body as {
     wrapper_type?: string;
     flowers?: unknown[];
+    note?: unknown;
   };
 
   if (!wrapper_type || !VALID_WRAPPER_TYPES.includes(wrapper_type)) {
@@ -26,6 +27,21 @@ export async function POST(request: Request) {
 
   if (flowers.length > 50) {
     return NextResponse.json({ error: "Too many flowers (max 50)" }, { status: 400 });
+  }
+
+  // Validate note if provided
+  let trimmedNote: string | null = null;
+  if (note !== undefined && note !== null) {
+    if (typeof note !== "string") {
+      return NextResponse.json({ error: "Note must be a string" }, { status: 400 });
+    }
+    const t = note.trim();
+    if (t.length > 150) {
+      return NextResponse.json({ error: "Note must be 150 characters or fewer" }, { status: 400 });
+    }
+    if (t.length > 0) {
+      trimmedNote = t;
+    }
   }
 
   // Validate each flower has required fields
@@ -46,7 +62,7 @@ export async function POST(request: Request) {
   try {
     const { data, error } = await getSupabase()
       .from("bouquets")
-      .insert({ wrapper_type, flowers })
+      .insert({ wrapper_type, flowers, ...(trimmedNote ? { note: trimmedNote } : {}) })
       .select("id")
       .single();
 

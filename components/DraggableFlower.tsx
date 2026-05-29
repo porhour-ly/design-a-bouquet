@@ -375,7 +375,14 @@ export default function DraggableFlower({
       }}
       className="select-none"
     >
-      {type.startsWith("/") ? (
+      {type.startsWith("/notes/") ? (
+        <img
+          src={type}
+          alt="Note card"
+          draggable={false}
+          style={{ height: flowerImageHeight * 0.6, width: "auto", display: "block", pointerEvents: "none" }}
+        />
+      ) : type.startsWith("/") ? (
         <img
           src={type}
           alt=""
