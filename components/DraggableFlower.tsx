@@ -5,6 +5,7 @@ import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useGesture } from "@use-gesture/react";
 import type { Rect } from "./wrappers/types";
 import { applySoftBoundary, clampToRect, isInsideRect } from "./bouquetConstraints";
+import type { MaskBoundaryHandle } from "./useMaskBoundary";
 
 type LayerAction = "front" | "back" | "forward" | "backward";
 
@@ -18,6 +19,7 @@ interface DraggableFlowerProps {
   zIndex: number;
   isSelected: boolean;
   compositionZone?: Rect;
+  maskBoundary?: MaskBoundaryHandle;
   flowerImageHeight?: number;
   onDragEnd: (id: string, x: number, y: number) => void;
   onDragStart: (id: string) => void;
@@ -45,6 +47,7 @@ export default function DraggableFlower({
   zIndex,
   isSelected,
   compositionZone,
+  maskBoundary,
   flowerImageHeight = 250,
   onDragEnd,
   onDragStart,
@@ -107,11 +110,16 @@ export default function DraggableFlower({
     });
   }, [id, registerTransformHandler, motionScale, motionRotate]);
 
-  // Store compositionZone in a ref so the gesture handler always sees the latest value
+  // Store compositionZone and maskBoundary in refs so gesture handlers see latest values
   const zoneRef = useRef(compositionZone);
   useEffect(() => {
     zoneRef.current = compositionZone;
   }, [compositionZone]);
+
+  const maskRef = useRef(maskBoundary);
+  useEffect(() => {
+    maskRef.current = maskBoundary;
+  }, [maskBoundary]);
 
   useGesture(
     {
@@ -122,8 +130,22 @@ export default function DraggableFlower({
       },
       onDrag: ({ offset: [ox, oy] }) => {
         if (longPressFired.current) return;
+        const mask = maskRef.current;
         const zone = zoneRef.current;
-        if (zone) {
+        if (mask?.isReady) {
+          // Check the flower's center with reduced insets — keeps stems mostly
+          // inside without over-constraining placement near edges
+          const el = ref.current;
+          const s = motionScale.get();
+          const insetFactor = 0.35;
+          const halfW = (el.offsetWidth * s) / 2 * insetFactor;
+          const halfH = (el.offsetHeight * s) / 2 * insetFactor;
+          const cx = ox + el.offsetWidth / 2;
+          const cy = oy + el.offsetHeight / 2;
+          const bounded = mask.applySoftBoundary(cx, cy, halfW, halfH);
+          motionX.set(bounded.x - el.offsetWidth / 2);
+          motionY.set(bounded.y - el.offsetHeight / 2);
+        } else if (zone) {
           const bounded = applySoftBoundary(ox, oy, zone);
           motionX.set(bounded.x);
           motionY.set(bounded.y);
@@ -137,13 +159,42 @@ export default function DraggableFlower({
           longPressFired.current = false;
           return;
         }
+        const mask = maskRef.current;
         const zone = zoneRef.current;
         const currentX = motionX.get();
         const currentY = motionY.get();
 
-        if (zone && !isInsideRect(currentX, currentY, zone)) {
+        if (mask?.isReady) {
+          const el = ref.current;
+          const s = motionScale.get();
+          const insetFactor = 0.35;
+          const halfW = (el.offsetWidth * s) / 2 * insetFactor;
+          const halfH = (el.offsetHeight * s) / 2 * insetFactor;
+          const cx = currentX + el.offsetWidth / 2;
+          const cy = currentY + el.offsetHeight / 2;
+
+          if (!mask.isInside(cx, cy, halfW, halfH)) {
+            const clamped = mask.clamp(cx, cy, halfW, halfH);
+            const newX = clamped.x - el.offsetWidth / 2;
+            const newY = clamped.y - el.offsetHeight / 2;
+            animate(motionX, newX, {
+              type: "spring",
+              stiffness: 300,
+              damping: 25,
+            });
+            animate(motionY, newY, {
+              type: "spring",
+              stiffness: 300,
+              damping: 25,
+              onComplete: () => {
+                onDragEnd(id, newX, newY);
+              },
+            });
+          } else {
+            onDragEnd(id, currentX, currentY);
+          }
+        } else if (zone && !isInsideRect(currentX, currentY, zone)) {
           const clamped = clampToRect(currentX, currentY, zone);
-          // Spring-animate back to nearest valid position
           animate(motionX, clamped.x, {
             type: "spring",
             stiffness: 300,

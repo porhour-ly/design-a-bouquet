@@ -10,6 +10,7 @@ export interface WrapperNative {
   aligned?: boolean;
   backSrc: string;
   frontSrc: string;
+  maskSrc?: string;
 }
 
 export interface WrapperEntry {
@@ -70,6 +71,7 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
       aligned: true,
       backSrc: "/wrappers/pink/back.png",
       frontSrc: "/wrappers/pink/front.png",
+      maskSrc: "/wrappers/pink/mask.png",
     },
   },
   "blue": {
@@ -85,6 +87,7 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
       aligned: true,
       backSrc: "/wrappers/blue/back.png",
       frontSrc: "/wrappers/blue/front.png",
+      maskSrc: "/wrappers/blue/mask.png",
     },
   },
   "red": {
@@ -100,6 +103,7 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
       aligned: true,
       backSrc: "/wrappers/red/back.png",
       frontSrc: "/wrappers/red/front.png",
+      maskSrc: "/wrappers/red/mask.png",
     },
   },
   "purple": {
@@ -115,6 +119,7 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
       aligned: true,
       backSrc: "/wrappers/purple/back.png",
       frontSrc: "/wrappers/purple/front.png",
+      maskSrc: "/wrappers/purple/mask.png",
     },
   },
   "foral": {
@@ -130,6 +135,7 @@ export const WRAPPER_REGISTRY: Record<WrapperType, WrapperEntry> = {
       aligned: true,
       backSrc: "/wrappers/foral/back.png",
       frontSrc: "/wrappers/foral/front.png",
+      maskSrc: "/wrappers/foral/mask.png",
     },
   },
 };

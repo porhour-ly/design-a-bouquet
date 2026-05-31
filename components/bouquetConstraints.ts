@@ -102,6 +102,7 @@ export interface ResponsiveWrapperResult {
   zone: BouquetZoneConfig;
   assets: WrapperAssets;
   wrapperPos: Point;
+  scale: number;
 }
 
 /**
@@ -119,7 +120,7 @@ export function computeResponsiveWrapper(
   if (!nat) {
     // Legacy wrapper: use pre-computed static dimensions, center in full viewport
     const pos = computeWrapperPosition(vpWidth, vpHeight, entry.zone.width, entry.zone.height);
-    return { zone: entry.zone, assets: entry.assets, wrapperPos: pos };
+    return { zone: entry.zone, assets: entry.assets, wrapperPos: pos, scale: 1 };
   }
 
   const availW = vpWidth;
@@ -169,5 +170,5 @@ export function computeResponsiveWrapper(
     y: reserveTop + (availH - totalH) / 2,
   };
 
-  return { zone, assets, wrapperPos };
+  return { zone, assets, wrapperPos, scale };
 }

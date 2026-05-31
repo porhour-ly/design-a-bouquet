@@ -14,6 +14,7 @@ import {
   clampToRect,
 } from "./bouquetConstraints";
 import type { ResponsiveWrapperResult } from "./bouquetConstraints";
+import { useMaskBoundary } from "./useMaskBoundary";
 import type { Flower } from "@/lib/bouquetData";
 
 const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
@@ -71,6 +72,9 @@ export default function FlowerCanvas() {
   // Compute the composition zone in viewport coordinates
   const compositionZoneVP: Rect = getViewportZone(zone.compositionZone, wrapperPos);
 
+  const entry = WRAPPER_REGISTRY[activeWrapper];
+  const maskBoundary = useMaskBoundary(entry.native, compositionZoneVP, wrapperPos, responsive.scale);
+
   // Flower image height scales proportionally with wrapper width
   const FLOWER_HEIGHT_RATIO = 250 / 384;
   const flowerImageHeight = Math.round(zone.width * FLOWER_HEIGHT_RATIO);
@@ -105,7 +109,9 @@ export default function FlowerCanvas() {
 
       const id =
         Math.random().toString(36).slice(2) + Date.now().toString(36);
-      const spawnPos = getSpawnPosition(zone, wrapperPos);
+      const spawnPos = maskBoundary.isReady
+        ? maskBoundary.getSpawnPosition(zone, wrapperPos)
+        : getSpawnPosition(zone, wrapperPos);
 
       setFlowers((prev) => [
         ...prev,
@@ -122,7 +128,7 @@ export default function FlowerCanvas() {
       activeFlowerId.current = id;
       setSelectedId(id);
     },
-    [zone, wrapperPos, flowers]
+    [zone, wrapperPos, flowers, maskBoundary]
   );
 
   const handleDragEnd = useCallback((id: string, x: number, y: number) => {
@@ -323,6 +329,7 @@ export default function FlowerCanvas() {
             {...flower}
             isSelected={flower.id === selectedId}
             compositionZone={compositionZoneVP}
+            maskBoundary={maskBoundary}
             flowerImageHeight={flowerImageHeight}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
