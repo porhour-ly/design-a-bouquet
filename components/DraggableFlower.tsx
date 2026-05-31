@@ -507,8 +507,8 @@ export default function DraggableFlower({
         <motion.div
           ref={menuContainerRef}
           data-control
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
           style={{
             position: "absolute",
