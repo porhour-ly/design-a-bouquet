@@ -15,6 +15,7 @@ import {
 } from "./bouquetConstraints";
 import type { ResponsiveWrapperResult } from "./bouquetConstraints";
 import { useMaskBoundary } from "./useMaskBoundary";
+import { useUndoHistory } from "./useUndoHistory";
 import type { Flower } from "@/lib/bouquetData";
 
 const DraggableFlower = dynamic(() => import("./DraggableFlower"), {
@@ -27,6 +28,7 @@ function isNoteCard(type: string) {
 
 export default function FlowerCanvas() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
+  const { pushSnapshot, popSnapshot } = useUndoHistory();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeWrapper, setActiveWrapper] = useState<WrapperType>("pink");
   const nextZIndex = useRef(1);
@@ -114,6 +116,7 @@ export default function FlowerCanvas() {
         ? maskBoundary.getSpawnPosition(zone, wrapperPos)
         : getSpawnPosition(zone, wrapperPos);
 
+      pushSnapshot(flowers);
       setFlowers((prev) => [
         ...prev,
         {
@@ -129,35 +132,41 @@ export default function FlowerCanvas() {
       activeFlowerId.current = id;
       setSelectedId(id);
     },
-    [zone, wrapperPos, flowers, maskBoundary]
+    [zone, wrapperPos, flowers, maskBoundary, pushSnapshot]
   );
 
   const handleDragEnd = useCallback((id: string, x: number, y: number) => {
-    setFlowers((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, x, y } : f))
-    );
-  }, []);
+    setFlowers((prev) => {
+      pushSnapshot(prev);
+      return prev.map((f) => (f.id === id ? { ...f, x, y } : f));
+    });
+  }, [pushSnapshot]);
 
   const handlePinchEnd = useCallback(
     (id: string, scale: number, rotation: number) => {
-      setFlowers((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, scale, rotation } : f))
-      );
+      setFlowers((prev) => {
+        pushSnapshot(prev);
+        return prev.map((f) => (f.id === id ? { ...f, scale, rotation } : f));
+      });
     },
-    []
+    [pushSnapshot]
   );
 
   const handleRotateEnd = useCallback((id: string, rotation: number) => {
-    setFlowers((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, rotation } : f))
-    );
-  }, []);
+    setFlowers((prev) => {
+      pushSnapshot(prev);
+      return prev.map((f) => (f.id === id ? { ...f, rotation } : f));
+    });
+  }, [pushSnapshot]);
 
   const handleDelete = useCallback((id: string) => {
-    setFlowers((prev) => prev.filter((f) => f.id !== id));
+    setFlowers((prev) => {
+      pushSnapshot(prev);
+      return prev.filter((f) => f.id !== id);
+    });
     setSelectedId(null);
     activeFlowerId.current = null;
-  }, []);
+  }, [pushSnapshot]);
 
   const handleDragStart = useCallback((id: string) => {
     activeFlowerId.current = id;
@@ -171,6 +180,7 @@ export default function FlowerCanvas() {
         if (!target) return prev;
 
         if (action === "front") {
+          pushSnapshot(prev);
           const z = nextZIndex.current++;
           return prev.map((f) => (f.id === id ? { ...f, zIndex: z } : f));
         }
@@ -178,6 +188,7 @@ export default function FlowerCanvas() {
         if (action === "back") {
           const minZ = Math.min(...prev.map((f) => f.zIndex));
           if (target.zIndex === minZ) return prev; // already at back
+          pushSnapshot(prev);
           // Keep z-index >= 1 so flowers stay above the back wrapper (z-index 0)
           const newZ = Math.max(minZ - 1, 1);
           if (newZ === minZ) {
@@ -198,6 +209,7 @@ export default function FlowerCanvas() {
             .filter((f) => f.zIndex > target.zIndex)
             .sort((a, b) => a.zIndex - b.zIndex);
           if (above.length === 0) return prev; // already at front
+          pushSnapshot(prev);
           const swap = above[0];
           return prev.map((f) => {
             if (f.id === id) return { ...f, zIndex: swap.zIndex };
@@ -211,6 +223,7 @@ export default function FlowerCanvas() {
           .filter((f) => f.zIndex < target.zIndex)
           .sort((a, b) => b.zIndex - a.zIndex);
         if (below.length === 0) return prev; // already at back
+        pushSnapshot(prev);
         const swap = below[0];
         return prev.map((f) => {
           if (f.id === id) return { ...f, zIndex: swap.zIndex };
@@ -222,7 +235,7 @@ export default function FlowerCanvas() {
       // new layer position is immediately visible
       setSelectedId(null);
     },
-    []
+    [pushSnapshot]
   );
 
   const handleCanvasPointerDown = useCallback((e: React.PointerEvent) => {
@@ -256,9 +269,37 @@ export default function FlowerCanvas() {
     []
   );
 
+  // --- Undo ---
+  const handleUndo = useCallback(() => {
+    const prev = popSnapshot();
+    if (prev) {
+      setFlowers(prev);
+      setSelectedId(null);
+    }
+  }, [popSnapshot]);
+
+  // Desktop: Cmd/Ctrl+Z
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleUndo]);
+
+  // Mobile: Two-finger double-tap detected via pinch gesture lifecycle
+  const pinchStartTime = useRef(0);
+  const lastTwoFingerTap = useRef(0);
+  const pinchMoved = useRef(false);
+
   useGesture(
     {
       onPinchStart: () => {
+        pinchStartTime.current = Date.now();
+        pinchMoved.current = false;
         const id = activeFlowerId.current;
         if (id) {
           const handler = transformHandlers.current.get(id);
@@ -267,7 +308,9 @@ export default function FlowerCanvas() {
           }
         }
       },
-      onPinch: ({ offset: [s], movement: [, angleDelta] }) => {
+      onPinch: ({ offset: [s], movement: [, angleDelta], first }) => {
+        if (first) return;
+        pinchMoved.current = true;
         const id = activeFlowerId.current;
         if (id) {
           const handler = transformHandlers.current.get(id);
@@ -278,6 +321,18 @@ export default function FlowerCanvas() {
         }
       },
       onPinchEnd: () => {
+        const elapsed = Date.now() - pinchStartTime.current;
+        if (!pinchMoved.current && elapsed < 300) {
+          const now = Date.now();
+          if (now - lastTwoFingerTap.current < 400) {
+            handleUndo();
+            lastTwoFingerTap.current = 0;
+          } else {
+            lastTwoFingerTap.current = now;
+          }
+          return; // Don't commit pinch state for a tap
+        }
+
         const id = activeFlowerId.current;
         if (id) {
           const handler = transformHandlers.current.get(id);

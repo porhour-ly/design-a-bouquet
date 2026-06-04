@@ -245,6 +245,7 @@ export default function SharedBouquetPage() {
           textDecoration: "none",
           fontSize: 15,
           fontWeight: 600,
+          whiteSpace: "nowrap",
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}
       >

@@ -62,6 +62,14 @@ export default function DraggableFlower({
   const motionY = useMotionValue(y);
   const motionScale = useMotionValue(baseScale);
   const motionRotate = useMotionValue(baseRotation);
+
+  // Sync motion values when props change (e.g. undo restoring previous state).
+  // During normal gestures the committed state matches the motion value, so these are no-ops.
+  useEffect(() => { motionX.set(x); }, [x, motionX]);
+  useEffect(() => { motionY.set(y); }, [y, motionY]);
+  useEffect(() => { motionScale.set(baseScale); }, [baseScale, motionScale]);
+  useEffect(() => { motionRotate.set(baseRotation); }, [baseRotation, motionRotate]);
+
   const ref = useRef<HTMLDivElement>(null!);
   const handleRef = useRef<HTMLDivElement>(null);
   const deleteRef = useRef<HTMLDivElement>(null);
