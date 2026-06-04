@@ -32,6 +32,7 @@ export default function FlowerCanvas() {
   const nextZIndex = useRef(1);
   const canvasRef = useRef<HTMLDivElement>(null!);
   const activeFlowerId = useRef<string | null>(null);
+  const draggingIdRef = useRef<string | null>(null);
   const pinchBaseRotation = useRef(0);
   const transformHandlers = useRef(
     new Map<
@@ -330,6 +331,7 @@ export default function FlowerCanvas() {
             isSelected={flower.id === selectedId}
             compositionZone={compositionZoneVP}
             maskBoundary={maskBoundary}
+            draggingIdRef={draggingIdRef}
             flowerImageHeight={flowerImageHeight}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}

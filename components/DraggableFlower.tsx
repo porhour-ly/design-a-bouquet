@@ -20,6 +20,7 @@ interface DraggableFlowerProps {
   isSelected: boolean;
   compositionZone?: Rect;
   maskBoundary?: MaskBoundaryHandle;
+  draggingIdRef?: React.MutableRefObject<string | null>;
   flowerImageHeight?: number;
   onDragEnd: (id: string, x: number, y: number) => void;
   onDragStart: (id: string) => void;
@@ -48,6 +49,7 @@ export default function DraggableFlower({
   isSelected,
   compositionZone,
   maskBoundary,
+  draggingIdRef,
   flowerImageHeight = 250,
   onDragEnd,
   onDragStart,
@@ -125,11 +127,15 @@ export default function DraggableFlower({
     {
       onDragStart: () => {
         if (longPressFired.current) return;
+        // Only one flower can be dragged at a time
+        if (draggingIdRef && draggingIdRef.current !== null && draggingIdRef.current !== id) return;
+        if (draggingIdRef) draggingIdRef.current = id;
         setMenuOpen(false);
         onDragStart(id);
       },
       onDrag: ({ offset: [ox, oy] }) => {
         if (longPressFired.current) return;
+        if (draggingIdRef && draggingIdRef.current !== null && draggingIdRef.current !== id) return;
         const mask = maskRef.current;
         const zone = zoneRef.current;
         if (mask?.isReady) {
@@ -157,8 +163,11 @@ export default function DraggableFlower({
       onDragEnd: () => {
         if (longPressFired.current) {
           longPressFired.current = false;
+          if (draggingIdRef?.current === id) draggingIdRef.current = null;
           return;
         }
+        if (draggingIdRef && draggingIdRef.current !== null && draggingIdRef.current !== id) return;
+        if (draggingIdRef) draggingIdRef.current = null;
         const mask = maskRef.current;
         const zone = zoneRef.current;
         const currentX = motionX.get();
